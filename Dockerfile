@@ -1,20 +1,25 @@
-FROM oven/bun:1-alpine
+# use the official Bun image
+# see all versions at https://hub.docker.com/r/oven/bun/tags
+FROM oven/bun:1 AS build
 WORKDIR /app
 
-COPY package.json bun.lock ./
-RUN bun install --frozen-lockfile
+COPY package.json bun.lock* ./
 
-COPY nuxt.config.ts ./
-COPY drizzle.config.ts ./
-COPY .env ./
-COPY app ./app
-COPY server ./server
-COPY scripts ./scripts
+# use ignore-scripts to avoid building node modules like better-sqlite3
+RUN bun install --frozen-lockfile --ignore-scripts
 
-ENV NUXT_PUBLIC_API_URL=""
+# Copy the entire project
+COPY . .
 
-RUN bun run build
+RUN bun --bun run build
 
-USER bun
-EXPOSE 3000
-CMD ["bun", ".output/server/index.mjs"]
+# copy production dependencies and source code into final image
+FROM oven/bun:1 AS production
+WORKDIR /app
+
+# Only `.output` folder is needed from the build stage
+COPY --from=build /app/.output /app
+
+# run the app
+EXPOSE 3000/tcp
+ENTRYPOINT [ "bun", "--bun", "run", "/app/server/index.mjs" ]
