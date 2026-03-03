@@ -17,6 +17,10 @@ RUN bun --bun run build
 FROM oven/bun:1-alpine AS production
 WORKDIR /app
 
+COPY package.json bun.lock* ./
+
+RUN bun install --frozen-lockfile --ignore-scripts
+
 # Only `.output` folder is needed from the build stage
 COPY --from=build /app/.output /app
 
