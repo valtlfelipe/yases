@@ -9,6 +9,7 @@ export default defineEventHandler(async (event) => {
   let body: Record<string, unknown>
   try {
     body = await readBody(event)
+    body = typeof body === 'string' ? JSON.parse(body) : body
   }
   catch {
     return { ok: true }

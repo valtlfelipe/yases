@@ -1,6 +1,6 @@
 import { authClient } from '../lib/auth.client'
 
-const publicRoutes = ['/login', '/signup', '/api/auth', '/api/setup-status']
+const publicRoutes = ['/login', '/signup']
 
 export default defineNuxtRouteMiddleware(async (to, _from) => {
   if (publicRoutes.some(route => to.path.startsWith(route))) {
