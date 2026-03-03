@@ -110,6 +110,7 @@ export const emailSends = pgTable('email_sends', {
   id: uuid('id').primaryKey().defaultRandom(),
   to: text('to').notNull(),
   from: text('from').notNull(),
+  fromDomain: text('from_domain'),
   subject: text('subject').notNull(),
   htmlBody: text('html_body'),
   textBody: text('text_body'),

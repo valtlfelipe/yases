@@ -96,11 +96,14 @@ export default defineEventHandler(async (event) => {
     return { error: 'SUPPRESSED', reason: suppression.reason }
   }
 
+  const fromDomain = extractEmail(from).split('@')[1] ?? null
+
   const [send] = await db
     .insert(emailSends)
     .values({
       to,
       from,
+      fromDomain,
       subject,
       htmlBody: html ?? null,
       textBody: text ?? null,

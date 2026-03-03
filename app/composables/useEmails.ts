@@ -29,12 +29,28 @@ interface EmailListResponse {
   limit: number
 }
 
-export function useEmails(page: Ref<number> = ref(1), limit = 20) {
+export interface EmailFilters {
+  fromDomain?: string
+  to?: string
+  dateFrom?: string
+  dateTo?: string
+}
+
+export function useEmails(page: Ref<number> = ref(1), limit = 20, filters: Ref<EmailFilters> = ref({})) {
+  const query = computed(() => ({
+    page: page.value,
+    limit,
+    ...(filters.value.fromDomain ? { fromDomain: filters.value.fromDomain } : {}),
+    ...(filters.value.to ? { to: filters.value.to } : {}),
+    ...(filters.value.dateFrom ? { dateFrom: filters.value.dateFrom } : {}),
+    ...(filters.value.dateTo ? { dateTo: filters.value.dateTo } : {}),
+  }))
+
   const { data, pending, error, refresh } = useFetch<EmailListResponse>('/api/emails', {
     credentials: 'include',
-    query: { page, limit },
-    key: () => `emails-${page.value}`,
-    watch: [page],
+    query,
+    key: () => `emails-${JSON.stringify(query.value)}`,
+    watch: [query],
   })
 
   return { emails: data, pending, error, refresh }

@@ -57,6 +57,13 @@
       "when": 1772570856814,
       "tag": "0008_cold_the_santerians",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1772600000000,
+      "tag": "0009_add_from_domain",
+      "breakpoints": true
     }
   ]
 }

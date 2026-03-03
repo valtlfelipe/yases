@@ -51,8 +51,16 @@
             Details
           </h3>
           <dl class="space-y-4">
+            <div class="flex justify-between items-start py-2 border-b border-stone-100 dark:border-stone-800">
+              <dt class="text-sm text-stone-500 dark:text-stone-400 shrink-0 mr-4">
+                Subject
+              </dt>
+              <dd class="text-sm text-stone-900 dark:text-stone-100 text-right">
+                {{ email.subject }}
+              </dd>
+            </div>
             <div class="flex justify-between items-center py-2 border-b border-stone-100 dark:border-stone-800">
-              <dt class="text-sm text-stone-500 dark:text-stone-400">
+              <dt class="text-sm text-stone-500 dark:text-stone-400 shrink-0 mr-4">
                 To
               </dt>
               <dd class="text-sm text-stone-900 dark:text-stone-100 font-mono">
@@ -60,15 +68,26 @@
               </dd>
             </div>
             <div class="flex justify-between items-center py-2 border-b border-stone-100 dark:border-stone-800">
-              <dt class="text-sm text-stone-500 dark:text-stone-400">
+              <dt class="text-sm text-stone-500 dark:text-stone-400 shrink-0 mr-4">
                 From
               </dt>
               <dd class="text-sm text-stone-900 dark:text-stone-100 font-mono">
                 {{ email.from }}
               </dd>
             </div>
+            <div
+              v-if="email.replyTo"
+              class="flex justify-between items-center py-2 border-b border-stone-100 dark:border-stone-800"
+            >
+              <dt class="text-sm text-stone-500 dark:text-stone-400 shrink-0 mr-4">
+                Reply-To
+              </dt>
+              <dd class="text-sm text-stone-900 dark:text-stone-100 font-mono">
+                {{ email.replyTo }}
+              </dd>
+            </div>
             <div class="flex justify-between items-center py-2 border-b border-stone-100 dark:border-stone-800">
-              <dt class="text-sm text-stone-500 dark:text-stone-400">
+              <dt class="text-sm text-stone-500 dark:text-stone-400 shrink-0 mr-4">
                 Queued
               </dt>
               <dd class="text-sm text-stone-600 dark:text-stone-300">
@@ -79,7 +98,7 @@
               v-if="email.sentAt"
               class="flex justify-between items-center py-2 border-b border-stone-100 dark:border-stone-800"
             >
-              <dt class="text-sm text-stone-500 dark:text-stone-400">
+              <dt class="text-sm text-stone-500 dark:text-stone-400 shrink-0 mr-4">
                 Sent
               </dt>
               <dd class="text-sm text-stone-600 dark:text-stone-300">
@@ -90,11 +109,44 @@
               v-if="email.deliveredAt"
               class="flex justify-between items-center py-2 border-b border-stone-100 dark:border-stone-800"
             >
-              <dt class="text-sm text-stone-500 dark:text-stone-400">
+              <dt class="text-sm text-stone-500 dark:text-stone-400 shrink-0 mr-4">
                 Delivered
               </dt>
               <dd class="text-sm text-stone-600 dark:text-stone-300">
                 {{ formatDate(email.deliveredAt) }}
+              </dd>
+            </div>
+            <div
+              v-if="email.sesMessageId"
+              class="flex justify-between items-center py-2 border-b border-stone-100 dark:border-stone-800"
+            >
+              <dt class="text-sm text-stone-500 dark:text-stone-400 shrink-0 mr-4">
+                SES Message ID
+              </dt>
+              <dd class="text-sm text-stone-600 dark:text-stone-300 font-mono truncate max-w-[220px]" :title="email.sesMessageId">
+                {{ email.sesMessageId }}
+              </dd>
+            </div>
+            <div
+              v-if="email.attempts > 1"
+              class="flex justify-between items-center py-2 border-b border-stone-100 dark:border-stone-800"
+            >
+              <dt class="text-sm text-stone-500 dark:text-stone-400 shrink-0 mr-4">
+                Attempts
+              </dt>
+              <dd class="text-sm text-stone-600 dark:text-stone-300">
+                {{ email.attempts }}
+              </dd>
+            </div>
+            <div
+              v-if="email.lastError"
+              class="flex justify-between items-start py-2"
+            >
+              <dt class="text-sm text-stone-500 dark:text-stone-400 shrink-0 mr-4">
+                Error
+              </dt>
+              <dd class="text-sm text-red-600 dark:text-red-400 text-right">
+                {{ email.lastError }}
               </dd>
             </div>
           </dl>
