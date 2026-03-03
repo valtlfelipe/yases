@@ -3,5 +3,5 @@ builder = "DOCKERFILE"
 dockerfilePath = "Dockerfile.worker"
 
 [deploy]
-startCommand = "bun src/worker.ts"
+startCommand = "bun server/workers/index.ts"
 restartPolicyType = "ON_FAILURE"

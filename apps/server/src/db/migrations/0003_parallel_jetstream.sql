@@ -1,1 +1,0 @@
-ALTER TYPE "public"."email_event_type" ADD VALUE 'submitted' BEFORE 'send';

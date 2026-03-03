@@ -1,19 +1,42 @@
 {
   "name": "email-service",
   "private": true,
+  "type": "module",
   "packageManager": "bun@1.3.10",
-  "workspaces": ["apps/*"],
   "scripts": {
-    "dev:server": "turbo run dev:server --filter=email-server",
-    "dev:worker": "turbo run dev:worker --filter=email-server",
-    "dev:web": "turbo run dev --filter=email-web",
-    "dev": "turbo run dev:server dev:worker dev --filter=email-server --filter=email-web",
-    "db:generate": "turbo run db:generate --filter=email-server",
-    "db:migrate": "turbo run db:migrate --filter=email-server",
-    "db:studio": "turbo run db:studio --filter=email-server",
-    "create:admin": "turbo run create:admin --filter=email-server"
+    "dev": "nuxt dev",
+    "dev:worker": "bun run server/workers/index.ts",
+    "build": "nuxt build",
+    "start": "nuxt preview",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:studio": "drizzle-kit studio",
+    "create:admin": "bun run scripts/create-admin.ts",
+    "lint": "eslint .",
+    "typecheck": "nuxt typecheck"
+  },
+  "dependencies": {
+    "@aws-sdk/client-ses": "^3.1000.0",
+    "@aws-sdk/client-sesv2": "^3.1000.0",
+    "@aws-sdk/client-sns": "^3.1000.0",
+    "@better-auth/api-key": "^1.5.2",
+    "@nuxt/eslint": "^1.15.2",
+    "@nuxt/icon": "1",
+    "@nuxt/ui": "^4",
+    "better-auth": "^1.5.2",
+    "bullmq": "^5.70.1",
+    "drizzle-orm": "^0.41.0",
+    "ioredis": "^5.10.0",
+    "pg": "^8.19.0",
+    "vue-chartjs": "^5",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
-    "turbo": "^2"
+    "@types/bun": "^1.3.10",
+    "@types/pg": "^8.18.0",
+    "@vueuse/core": "^14.2.1",
+    "drizzle-kit": "^0.31.9",
+    "nuxt": "^4.3.1",
+    "tailwindcss": "^4"
   }
 }
