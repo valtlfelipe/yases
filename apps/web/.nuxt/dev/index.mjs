@@ -2281,7 +2281,7 @@ const _l0QRcgd4weuGi8_syrxLyDtmwVFZvL0GV53_rEPcg = (function(nitro) {
 
 const rootDir = "/Users/felipe/playground/email/apps/web";
 
-const appHead = {"meta":[{"name":"viewport","content":"width=device-width, initial-scale=1"},{"charset":"utf-8"},{"name":"description","content":"Email service dashboard"}],"link":[],"style":[],"script":[],"noscript":[],"title":"Email Service Dashboard"};
+const appHead = {"meta":[{"name":"viewport","content":"width=device-width, initial-scale=1"},{"charset":"utf-8"},{"name":"description","content":"YASES - Email service dashboard"}],"link":[],"style":[],"script":[],"noscript":[],"title":"YASES - Dashboard"};
 
 const appRootTag = "div";
 
@@ -2391,22 +2391,7 @@ _57qf0X_uwSHGaCVh73NCIc5jY06tESw2_wa0iHUHjWA,
 _kAT565DfogsmUszj9YUJww0b44fh8ydwC7cAcvAvYqY
 ];
 
-const assets = {
-  "/index.mjs": {
-    "type": "text/javascript; charset=utf-8",
-    "etag": "\"1c538-sO48YAmQKhvE0/8h0D1Zy65DPnY\"",
-    "mtime": "2026-03-03T11:37:22.151Z",
-    "size": 116024,
-    "path": "index.mjs"
-  },
-  "/index.mjs.map": {
-    "type": "application/json",
-    "etag": "\"6d57f-o15FDouMJC7G+kX1Rp6LmPUhELQ\"",
-    "mtime": "2026-03-03T11:37:22.151Z",
-    "size": 447871,
-    "path": "index.mjs.map"
-  }
-};
+const assets = {};
 
 function readAsset (id) {
   const serverDir = dirname$1(fileURLToPath(globalThis._importMeta_.url));

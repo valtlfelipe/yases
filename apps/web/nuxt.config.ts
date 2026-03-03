@@ -10,9 +10,9 @@ export default defineNuxtConfig({
   app: {
     pageTransition: { name: 'page', mode: 'out-in' },
     head: {
-      title: 'Email Service Dashboard',
+      title: 'YASES - Dashboard',
       meta: [
-        { name: 'description', content: 'Email service dashboard' }
+        { name: 'description', content: 'YASES - Email service dashboard' }
       ]
     }
   },

@@ -7,7 +7,7 @@
             <UIcon name="i-heroicons-paper-airplane" class="w-5 h-5 text-white dark:text-stone-900" />
           </div>
           <div>
-            <h1 class="text-lg font-semibold text-stone-900 dark:text-stone-100 font-display">Postlane</h1>
+            <h1 class="text-lg font-semibold text-stone-900 dark:text-stone-100 font-display">YASES</h1>
             <p class="text-[10px] text-stone-500 dark:text-stone-400 uppercase tracking-wider">Email Service</p>
           </div>
         </div>
@@ -35,7 +35,7 @@
             <p class="text-sm font-medium text-stone-900 dark:text-stone-100 truncate">{{ user?.name || 'User' }}</p>
             <p class="text-xs text-stone-500 dark:text-stone-400 truncate">{{ email }}</p>
           </div>
-          <button 
+          <button
             @click="logout"
             class="p-2 rounded-lg text-stone-400 hover:text-stone-600 dark:hover:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
             title="Sign out"
@@ -91,9 +91,9 @@ const pageTitle = computed(() => {
 })
 
 const currentDate = computed(() => {
-  return new Date().toLocaleDateString('en-US', { 
-    weekday: 'short', 
-    month: 'short', 
+  return new Date().toLocaleDateString('en-US', {
+    weekday: 'short',
+    month: 'short',
     day: 'numeric',
     year: 'numeric'
   })

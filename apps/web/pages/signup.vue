@@ -5,12 +5,24 @@
         <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-stone-900 dark:bg-stone-100 mb-4">
           <UIcon name="i-heroicons-paper-airplane" class="w-7 h-7 text-white dark:text-stone-900 -rotate-45" />
         </div>
-        <h1 class="text-2xl font-semibold text-stone-900 dark:text-stone-100">YASES</h1>
-        <p class="mt-1 text-sm text-stone-500 dark:text-stone-400">Sign in to your dashboard</p>
+        <h1 class="text-2xl font-semibold text-stone-900 dark:text-stone-100">Postlane</h1>
+        <p class="mt-1 text-sm text-stone-500 dark:text-stone-400">Create your admin account</p>
       </div>
 
       <div class="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-800 p-6 shadow-sm">
         <form class="space-y-4" @submit.prevent="submit">
+          <div>
+            <label class="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">Name</label>
+            <input
+              v-model="name"
+              type="text"
+              placeholder="Your name"
+              autocomplete="name"
+              required
+              class="w-full px-3 py-2.5 rounded-lg border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-stone-900 dark:focus:ring-stone-100 focus:border-transparent transition-all"
+            />
+          </div>
+
           <div>
             <label class="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">Email</label>
             <input
@@ -29,8 +41,9 @@
               v-model="password"
               type="password"
               placeholder="••••••••"
-              autocomplete="current-password"
+              autocomplete="new-password"
               required
+              minlength="8"
               class="w-full px-3 py-2.5 rounded-lg border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-stone-900 dark:focus:ring-stone-100 focus:border-transparent transition-all"
             />
           </div>
@@ -45,7 +58,7 @@
             class="w-full py-2.5 px-4 rounded-lg bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 font-medium hover:bg-stone-800 dark:hover:bg-stone-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
           >
             <UIcon v-if="pending" name="i-heroicons-arrow-path" class="w-4 h-4 animate-spin" />
-            <span>{{ pending ? 'Signing in...' : 'Sign in' }}</span>
+            <span>{{ pending ? 'Creating account...' : 'Create account' }}</span>
           </button>
         </form>
       </div>
@@ -60,8 +73,9 @@
 <script setup lang="ts">
 definePageMeta({ layout: false })
 
-const { login } = useAuth()
+const { signup } = useAuth()
 
+const name = ref('')
 const email = ref('')
 const password = ref('')
 const error = ref('')
@@ -71,9 +85,9 @@ async function submit() {
   error.value = ''
   pending.value = true
   try {
-    await login(email.value, password.value)
+    await signup(name.value, email.value, password.value)
   } catch (e: any) {
-    error.value = e.message || 'Invalid email or password.'
+    error.value = e.message || 'Failed to create account.'
   } finally {
     pending.value = false
   }
