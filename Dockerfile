@@ -13,7 +13,7 @@ RUN bun install --frozen-lockfile
 # Build static SPA (outputs to apps/web/.output/public/)
 COPY apps/web/ ./apps/web/
 ENV NUXT_PUBLIC_API_URL=""
-RUN bun --cwd apps/web run generate
+RUN cd apps/web && bun run generate
 
 # ──────────────────────────────────────────────
 # Stage 2: Production image (server + static SPA)
