@@ -48,7 +48,7 @@ export default defineEventHandler(async (event) => {
     return { error: 'Not found' }
   }
 
-  const send = rows[0]
+  const send = rows[0]!
 
   const timeline = [
     { event: 'queued', occurredAt: send.createdAt, metadata: null },

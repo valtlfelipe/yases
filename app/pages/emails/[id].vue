@@ -104,7 +104,7 @@
           <h3 class="text-lg font-display text-stone-900 dark:text-stone-100 mb-4">
             Timeline
           </h3>
-          <EmailTimeline :timeline="email.timeline" />
+          <EmailTimeline :timeline="email.timeline ?? []" />
         </div>
       </div>
     </template>

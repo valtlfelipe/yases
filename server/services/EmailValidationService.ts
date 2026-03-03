@@ -21,7 +21,7 @@ export class EmailValidationService {
     const formatResult = this.checkFormat(lower)
     if (!formatResult.valid) return formatResult
 
-    const domain = lower.split('@')[1]
+    const domain = lower.split('@')[1]!
 
     const cached = await redis.get(`${DOMAIN_CACHE_PREFIX}${domain}`)
     if (cached) {

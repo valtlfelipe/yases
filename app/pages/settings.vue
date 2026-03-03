@@ -290,7 +290,7 @@ type ApiKey = {
   name: string | null
   start: string | null
   prefix: string | null
-  createdAt: string
+  createdAt: string | Date
   expiresAt: string | null
 }
 
@@ -408,7 +408,7 @@ async function deleteKey() {
 }
 
 // --- Utils ---
-function formatDate(d: string) {
+function formatDate(d: string | Date) {
   return new Date(d).toLocaleDateString('en-US', {
     month: 'short', day: 'numeric', year: 'numeric',
   })

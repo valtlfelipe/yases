@@ -5,10 +5,10 @@ import { redis } from '../cache/redis'
 
 type SuppressionReason
   = | 'permanent_bounce'
-  | 'transient_bounce'
-  | 'complaint'
-  | 'invalid'
-  | 'manual'
+    | 'transient_bounce'
+    | 'complaint'
+    | 'invalid'
+    | 'manual'
 
 const CACHE_PREFIX = 'suppression:email:'
 const CACHE_TTL_SECONDS = 3600 // 1h
@@ -39,7 +39,7 @@ export class SuppressionService {
       return null
     }
 
-    const entry: SuppressionEntry = { reason: row[0].reason, detail: row[0].detail }
+    const entry: SuppressionEntry = { reason: row[0]!.reason, detail: row[0]!.detail }
     await redis.setex(cacheKey, CACHE_TTL_SECONDS, JSON.stringify(entry))
     return entry
   }

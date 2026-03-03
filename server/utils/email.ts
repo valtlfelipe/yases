@@ -5,7 +5,7 @@
  */
 export function extractEmail(input: string): string {
   const match = input.match(/<([^>]+)>/)
-  return (match ? match[1] : input).trim().toLowerCase()
+  return match ? match[1]!.trim().toLowerCase() : input.trim().toLowerCase()
 }
 
 /**
