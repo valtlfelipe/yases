@@ -64,7 +64,7 @@
       </div>
 
       <p class="text-center text-xs text-stone-400 dark:text-stone-500 mt-6">
-        Email service dashboard
+        Yet another SES Wrapper dashboard
       </p>
     </div>
   </div>

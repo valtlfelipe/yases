@@ -3,7 +3,7 @@ export default defineNuxtConfig({
   css: ['~/assets/css/main.css'],
   runtimeConfig: {
     public: {
-      apiUrl: process.env.NUXT_PUBLIC_API_URL || 'http://localhost:3000',
+      apiUrl: process.env.BETTER_AUTH_URL || 'http://localhost:3000',
     },
   },
   ssr: false,
@@ -12,7 +12,7 @@ export default defineNuxtConfig({
     head: {
       title: 'YASES - Dashboard',
       meta: [
-        { name: 'description', content: 'YASES - Email service dashboard' }
+        { name: 'description', content: 'YASES - Yet another SES Wrapper dashboard' }
       ]
     }
   },

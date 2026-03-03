@@ -8,7 +8,7 @@
           </div>
           <div>
             <h1 class="text-lg font-semibold text-stone-900 dark:text-stone-100 font-display">YASES</h1>
-            <p class="text-[10px] text-stone-500 dark:text-stone-400 uppercase tracking-wider">Email Service</p>
+            <p class="text-[10px] text-stone-500 dark:text-stone-400 uppercase tracking-wider">Yet another SES Wrapper</p>
           </div>
         </div>
       </div>

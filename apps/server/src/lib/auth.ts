@@ -9,7 +9,10 @@ export const auth = betterAuth({
   emailAndPassword: { enabled: true },
   secret: env.BETTER_AUTH_SECRET,
   baseURL: env.BETTER_AUTH_URL,
-  trustedOrigins: [env.DASHBOARD_URL],
+  trustedOrigins: (request) => {
+    const origin = request?.headers?.get("origin");
+    return origin ? [origin] : [];
+  },
   plugins: [
     apiKey([
       {

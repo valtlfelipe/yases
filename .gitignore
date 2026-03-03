@@ -6,13 +6,23 @@
 # Dependencies
 node_modules/
 
+# Turborepo
+.turbo/
+
+# Nuxt
+.nuxt/
+.output/
+
+# Server — compiled web assets (copied in during Docker build)
+apps/server/public/
+
 # Build output
 dist/
 
 # Drizzle migrations (generated files, keep if you want to commit migrations)
-# src/db/migrations/
+# apps/server/src/db/migrations/
 
-# Bun
+# Bun (legacy binary lockfile)
 bun.lockb
 
 # OS
