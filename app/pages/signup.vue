@@ -100,6 +100,13 @@ const password = ref('')
 const error = ref('')
 const pending = ref(false)
 
+onMounted(async () => {
+  const { setupRequired } = await $fetch<{ setupRequired: boolean }>('/api/setup-status')
+  if (!setupRequired) {
+    await navigateTo('/login')
+  }
+})
+
 async function submit() {
   error.value = ''
   pending.value = true
