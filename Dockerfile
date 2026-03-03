@@ -20,9 +20,10 @@ WORKDIR /app
 # Only `.output` folder is needed from the build stage
 COPY --from=build /app/.output /app
 
-# Copy migrations and seeds if they are outside of the .output folder
-COPY --from=build drizzle.config.ts drizzle.config.ts
-COPY --from=build server/db/migrations server/db/migrations
+# Copy migrations, config, and schema needed for drizzle-kit
+COPY --from=build /app/drizzle.config.ts /app
+COPY --from=build /app/server/db/migrations /app/server/db/migrations
+COPY --from=build /app/server/db/schema.ts /app/server/db/schema.ts
 
 # run the app
 EXPOSE 3000/tcp
