@@ -1,5 +1,9 @@
 export default defineNuxtConfig({
+  // future: {
+  //   compatibilityVersion: 5,
+  // },
   modules: ['@nuxt/ui'],
+  compatibilityDate: '2026-03-03',
   css: ['~/assets/css/main.css'],
   runtimeConfig: {
     public: {
