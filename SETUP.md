@@ -84,7 +84,8 @@ This is needed only when running `setup:aws` and `add:identity` scripts.
 ### 1. Configure your `.env`
 
 ```bash
-cp .env.example .env
+cp apps/server/.env.example apps/server/.env
+cp apps/web/.env.example apps/web/.env
 ```
 
 Fill in at minimum:

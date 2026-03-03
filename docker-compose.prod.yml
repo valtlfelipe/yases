@@ -30,9 +30,9 @@ services:
       - internal
 
   migrate:
-    build: .
+    build: ./apps/server
     command: bun run db:migrate
-    env_file: .env
+    env_file: apps/server/.env
     environment:
       DATABASE_URL: postgres://email:email@postgres:5432/email_service
     depends_on:
@@ -42,10 +42,10 @@ services:
       - internal
 
   server:
-    build: .
+    build: ./apps/server
     command: bun src/index.ts
     restart: unless-stopped
-    env_file: .env
+    env_file: apps/server/.env
     environment:
       DATABASE_URL: postgres://email:email@postgres:5432/email_service
       REDIS_URL: redis://valkey:6379
@@ -66,10 +66,10 @@ services:
       - internal
 
   worker:
-    build: .
+    build: ./apps/server
     command: bun src/worker.ts
     restart: unless-stopped
-    env_file: .env
+    env_file: apps/server/.env
     environment:
       DATABASE_URL: postgres://email:email@postgres:5432/email_service
       REDIS_URL: redis://valkey:6379
@@ -77,6 +77,21 @@ services:
       migrate:
         condition: service_completed_successfully
       valkey:
+        condition: service_healthy
+    networks:
+      - internal
+
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      NUXT_PUBLIC_API_URL: http://server:3000
+    ports:
+      - "80:3000"
+    depends_on:
+      server:
         condition: service_healthy
     networks:
       - internal
