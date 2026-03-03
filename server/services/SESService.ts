@@ -1,17 +1,9 @@
 import {
-  SESClient,
   SendEmailCommand,
   type SendEmailCommandInput,
-} from '@aws-sdk/client-ses'
+} from '@aws-sdk/client-sesv2'
+import { sesv2 } from '../lib/sesv2'
 import { env } from '../lib/env'
-
-const sesClient = new SESClient({
-  region: env.AWS_REGION,
-  credentials: {
-    accessKeyId: env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: env.AWS_SECRET_ACCESS_KEY,
-  },
-})
 
 interface SendEmailParams {
   to: string
@@ -20,26 +12,29 @@ interface SendEmailParams {
   html?: string
   text?: string
   replyTo?: string
+  tenantName?: string
 }
 
 export class SESService {
   async send(params: SendEmailParams): Promise<{ sesMessageId: string }> {
     const input: SendEmailCommandInput = {
-      Source: params.from,
+      FromEmailAddress: params.from,
       Destination: { ToAddresses: [params.to] },
-      Message: {
-        Subject: { Data: params.subject, Charset: 'UTF-8' },
-        Body: {
-          ...(params.html && { Html: { Data: params.html, Charset: 'UTF-8' } }),
-          ...(params.text && { Text: { Data: params.text, Charset: 'UTF-8' } }),
+      Content: {
+        Simple: {
+          Subject: { Data: params.subject, Charset: 'UTF-8' },
+          Body: {
+            ...(params.html && { Html: { Data: params.html, Charset: 'UTF-8' } }),
+            ...(params.text && { Text: { Data: params.text, Charset: 'UTF-8' } }),
+          },
         },
       },
       ...(params.replyTo && { ReplyToAddresses: [params.replyTo] }),
       ...(env.SES_CONFIGURATION_SET && { ConfigurationSetName: env.SES_CONFIGURATION_SET }),
+      ...(params.tenantName && { TenantName: params.tenantName }),
     }
 
-    const command = new SendEmailCommand(input)
-    const result = await sesClient.send(command)
+    const result = await sesv2.send(new SendEmailCommand(input))
 
     if (!result.MessageId) {
       throw new Error('SES returned no MessageId')

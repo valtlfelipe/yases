@@ -2,9 +2,11 @@ import { auth } from '../../lib/auth'
 import { db } from '../../db/index'
 import { emailIdentities } from '../../db/schema'
 import { env } from '../../lib/env'
-import { sesv2 } from '../../lib/sesv2'
+import { sesv2, identityArn, configSetArn } from '../../lib/sesv2'
 import {
   CreateEmailIdentityCommand,
+  CreateTenantCommand,
+  CreateTenantResourceAssociationCommand,
   GetEmailIdentityCommand,
   PutEmailIdentityMailFromAttributesCommand,
 } from '@aws-sdk/client-sesv2'
@@ -20,6 +22,10 @@ const bodySchema = z.object({
     ),
   mailFromSubdomain: z.string().min(1).default('mail'),
 })
+
+function domainToTenantName(domain: string): string {
+  return domain.replace(/\./g, '-')
+}
 
 function mapStatus(
   sesStatus: string | undefined,
@@ -80,6 +86,37 @@ export default defineEventHandler(async (event) => {
     }),
   )
 
+  // Create SES tenant for this identity (idempotent)
+  const tenantName = domainToTenantName(domain)
+  try {
+    await sesv2.send(new CreateTenantCommand({ TenantName: tenantName }))
+  }
+  catch (err) {
+    if ((err as { name?: string }).name !== 'AlreadyExistsException') throw err
+  }
+
+  // Associate identity with tenant
+  await sesv2.send(
+    new CreateTenantResourceAssociationCommand({
+      TenantName: tenantName,
+      ResourceArn: await identityArn(domain),
+    }),
+  ).catch((err: { name?: string }) => {
+    if (err.name !== 'AlreadyExistsException') throw err
+  })
+
+  // Associate configuration set with tenant (if configured)
+  if (env.SES_CONFIGURATION_SET) {
+    await sesv2.send(
+      new CreateTenantResourceAssociationCommand({
+        TenantName: tenantName,
+        ResourceArn: await configSetArn(env.SES_CONFIGURATION_SET),
+      }),
+    ).catch((err: { name?: string }) => {
+      if (err.name !== 'AlreadyExistsException') throw err
+    })
+  }
+
   // Upsert in DB
   const now = new Date()
   const [row] = await db
@@ -90,6 +127,7 @@ export default defineEventHandler(async (event) => {
       dkimTokens: dkimTokens.length ? dkimTokens : null,
       dkimStatus,
       mailFromDomain,
+      tenantName,
       rawAttributes: identity as unknown as Record<string, unknown>,
       updatedAt: now,
     })
@@ -100,6 +138,7 @@ export default defineEventHandler(async (event) => {
         dkimTokens: dkimTokens.length ? dkimTokens : null,
         dkimStatus,
         mailFromDomain,
+        tenantName,
         rawAttributes: identity as unknown as Record<string, unknown>,
         updatedAt: now,
       },

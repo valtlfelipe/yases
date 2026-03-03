@@ -21,14 +21,14 @@ const sendSchema = z
   })
   .refine(d => d.html || d.text, { message: 'html or text is required' })
 
-async function isVerifiedIdentity(fromAddress: string): Promise<boolean> {
+async function getIdentity(fromAddress: string) {
   const domain = extractEmail(fromAddress).split('@')[1]!
   const rows = await db
-    .select({ status: emailIdentities.status })
+    .select({ status: emailIdentities.status, tenantName: emailIdentities.tenantName })
     .from(emailIdentities)
     .where(eq(emailIdentities.domain, domain))
     .limit(1)
-  return rows[0]?.status === 'verified'
+  return rows[0] ?? null
 }
 
 const validationService = new EmailValidationService()
@@ -71,7 +71,8 @@ export default defineEventHandler(async (event) => {
   const toEmail = extractEmail(to)
   const fromEmail = extractEmail(from)
 
-  if (!await isVerifiedIdentity(fromEmail)) {
+  const identity = await getIdentity(fromEmail)
+  if (identity?.status !== 'verified') {
     setResponseStatus(event, 400)
     return {
       error: 'UNVERIFIED_IDENTITY',
@@ -122,6 +123,7 @@ export default defineEventHandler(async (event) => {
       html,
       text,
       replyTo,
+      tenantName: identity.tenantName ?? undefined,
       enqueuedAt: new Date().toISOString(),
     },
     { jobId: send.id },

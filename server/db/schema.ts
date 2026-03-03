@@ -128,6 +128,7 @@ export const emailIdentities = pgTable('email_identities', {
   dkimTokens: text('dkim_tokens').array(),
   dkimStatus: text('dkim_status'),
   mailFromDomain: text('mail_from_domain'),
+  tenantName: text('tenant_name'),
   rawAttributes: jsonb('raw_attributes'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
