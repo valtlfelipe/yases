@@ -94,8 +94,8 @@ async function submit() {
     if (error) throw new Error(error.message ?? 'Invalid email or password.')
     await navigateTo('/')
   }
-  catch (e: any) {
-    errorMsg.value = e.message || 'Invalid email or password.'
+  catch (e: unknown) {
+    errorMsg.value = e instanceof Error ? e.message : 'Invalid email or password.'
   }
   finally {
     pending.value = false

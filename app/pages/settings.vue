@@ -308,8 +308,8 @@ async function loadKeys() {
     console.log('Loaded keys:', data)
     keys.value = (data?.apiKeys ?? []) as ApiKey[]
   }
-  catch (e: any) {
-    loadError.value = e.message
+  catch (e: unknown) {
+    loadError.value = e instanceof Error ? e.message : 'Failed to load keys'
   }
   finally {
     pending.value = false
@@ -351,8 +351,8 @@ async function createKey() {
     showRevealModal.value = true
     await loadKeys()
   }
-  catch (e: any) {
-    createError.value = e.message
+  catch (e: unknown) {
+    createError.value = e instanceof Error ? e.message : 'Failed to create key'
   }
   finally {
     creating.value = false

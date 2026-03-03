@@ -26,7 +26,10 @@ import { emailIdentities } from '../src/db/schema.js'
 const ok = (s: string) => console.log(`\x1b[32m✓\x1b[0m  ${s}`)
 const info = (s: string) => console.log(`\x1b[36m→\x1b[0m  ${s}`)
 const warn = (s: string) => console.log(`\x1b[33m⚠\x1b[0m  ${s}`)
-const fail = (s: string) => { console.error(`\x1b[31m✗\x1b[0m  ${s}`); process.exit(1) }
+const fail = (s: string) => {
+  console.error(`\x1b[31m✗\x1b[0m  ${s}`)
+  process.exit(1)
+}
 
 function getFlag(name: string): string | undefined {
   const argv = process.argv.slice(2)

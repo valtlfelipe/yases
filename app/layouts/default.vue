@@ -22,7 +22,7 @@
 
       <nav class="flex-1 px-3 py-4 space-y-1">
         <NuxtLink
-          v-for="(item, index) in nav"
+          v-for="item in nav"
           :key="item.to"
           :to="item.to"
           class="nav-item"

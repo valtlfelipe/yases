@@ -4,7 +4,7 @@ dockerfilePath = "Dockerfile"
 
 [deploy]
 preDeployCommand = ["bunx drizzle-kit migrate"]
-startCommand = "bun .output/server/index.mjs"
+startCommand = "bun /app/server/index.mjs"
 healthcheckPath = "/health"
 healthcheckTimeout = 300
 restartPolicyType = "ON_FAILURE"

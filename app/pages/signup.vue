@@ -108,8 +108,8 @@ async function submit() {
     if (err) throw new Error(err.message ?? 'Failed to create account.')
     await navigateTo('/')
   }
-  catch (e: any) {
-    error.value = e.message || 'Failed to create account.'
+  catch (e: unknown) {
+    error.value = e instanceof Error ? e.message : 'Failed to create account.'
   }
   finally {
     pending.value = false
