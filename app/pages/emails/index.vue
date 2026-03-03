@@ -17,11 +17,11 @@
 
     <div class="card-elevated">
       <!-- Filter toolbar -->
-      <div class="flex flex-wrap items-center gap-2 px-4 py-3 border-b border-stone-200 dark:border-stone-800">
+      <div class="flex flex-wrap items-center gap-2 px-6 py-3 border-b border-stone-200 dark:border-stone-800">
         <UInput
           v-model="toInput"
           placeholder="Search recipient…"
-          size="sm"
+          color="neutral"
           icon="i-lucide-search"
           class="w-52"
         />
@@ -29,13 +29,13 @@
         <USelect
           v-model="selectedDomain"
           :items="domainSelectItems"
-          size="sm"
+          color="neutral"
           class="w-44"
         />
 
         <UPopover :content="{ side: 'bottom', align: 'start' }">
           <UButton
-            size="sm"
+
             color="neutral"
             variant="outline"
             icon="i-lucide-calendar"
@@ -57,7 +57,7 @@
 
         <UButton
           v-if="hasActiveFilters"
-          size="sm"
+
           variant="ghost"
           color="neutral"
           icon="i-lucide-x"
@@ -170,7 +170,7 @@
             </span>
             <div class="flex gap-2">
               <UButton
-                size="sm"
+
                 variant="soft"
                 color="neutral"
                 :disabled="page <= 1"
@@ -183,7 +183,7 @@
                 Previous
               </UButton>
               <UButton
-                size="sm"
+
                 variant="soft"
                 color="neutral"
                 :disabled="page >= totalPages"
@@ -255,7 +255,7 @@ const { emails, pending, error } = useEmails(page, limit, filtersRef)
 const totalPages = computed(() => Math.ceil((emails.value?.total ?? 0) / limit))
 
 const hasActiveFilters = computed(() =>
-  !!(selectedDomain.value !== '_all' || toInput.value || dateRange.value)
+  !!(selectedDomain.value !== '_all' || toInput.value || dateRange.value),
 )
 
 // Identities for domain dropdown

@@ -24,6 +24,20 @@
   --ui-bg: var(--color-surface);
   --ui-bg-elevated: var(--color-surface-elevated);
   --ui-border: var(--color-border);
+
+  /* Remap Nuxt UI neutral + primary to stone so inputs/rings have no blue tint */
+  --ui-color-neutral-50: var(--color-stone-50);
+  --ui-color-neutral-100: var(--color-stone-100);
+  --ui-color-neutral-200: var(--color-stone-200);
+  --ui-color-neutral-300: var(--color-stone-300);
+  --ui-color-neutral-400: var(--color-stone-400);
+  --ui-color-neutral-500: var(--color-stone-500);
+  --ui-color-neutral-600: var(--color-stone-600);
+  --ui-color-neutral-700: var(--color-stone-700);
+  --ui-color-neutral-800: var(--color-stone-800);
+  --ui-color-neutral-900: var(--color-stone-900);
+  --ui-color-neutral-950: var(--color-stone-950);
+
 }
 
 .dark {

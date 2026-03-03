@@ -1,22 +1,26 @@
 <template>
   <div>
     <div class="space-y-6">
-      <div class="flex items-center justify-between">
-        <div>
-          <h1 class="text-3xl font-display text-stone-900 dark:text-stone-100">
-            Domain Identities
-          </h1>
-          <p class="mt-1 text-stone-500 dark:text-stone-400">
-            Manage your verified sending domains.
-          </p>
-        </div>
-        <div class="flex items-center gap-3">
-          <span
-            v-if="data"
-            class="text-sm text-stone-500 dark:text-stone-400"
-          >{{ data.total }} total</span>
+      <div>
+        <h1 class="text-3xl font-display text-stone-900 dark:text-stone-100">
+          Domain Identities
+        </h1>
+        <p class="mt-1 text-stone-500 dark:text-stone-400">
+          Manage your verified sending domains.
+        </p>
+      </div>
+
+      <div class="card-elevated p-6 space-y-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-lg font-semibold text-stone-900 dark:text-stone-100">
+              Domains
+            </h2>
+            <p class="text-sm text-stone-500 dark:text-stone-400 mt-0.5">
+              Verified sending domains registered with AWS SES.
+            </p>
+          </div>
           <UButton
-            size="sm"
             @click="openAddModal"
           >
             <UIcon
@@ -26,9 +30,6 @@
             Add Domain
           </UButton>
         </div>
-      </div>
-
-      <div class="card-elevated p-6">
         <div
           v-if="pending"
           class="flex items-center justify-center py-12"
@@ -108,7 +109,10 @@
                     <StatusBadge :status="item.status" />
                   </td>
                   <td class="px-4 py-3">
-                    <HealthBadge :domain="item.domain" :has-tenant="!!item.tenantName" />
+                    <HealthBadge
+                      :domain="item.domain"
+                      :has-tenant="!!item.tenantName"
+                    />
                   </td>
                   <td class="px-4 py-3">
                     <span class="text-sm text-stone-500 dark:text-stone-400">{{ item.dkimStatus ?? '—' }}</span>
@@ -177,7 +181,7 @@
             </span>
             <div class="flex gap-2">
               <UButton
-                size="sm"
+
                 variant="soft"
                 color="neutral"
                 :disabled="page <= 1"
@@ -190,7 +194,7 @@
                 Previous
               </UButton>
               <UButton
-                size="sm"
+
                 variant="soft"
                 color="neutral"
                 :disabled="page >= totalPages"
@@ -409,37 +413,37 @@
       </template>
     </UModal>
 
-  <!-- Delete confirm modal -->
-  <UModal v-model:open="showDeleteModal">
-    <template #content>
-      <div class="p-6 space-y-5">
-        <div>
-          <h3 class="text-lg font-semibold text-stone-900 dark:text-stone-100">
-            Remove Domain
-          </h3>
-          <p class="text-sm text-stone-500 dark:text-stone-400 mt-1">
-            Are you sure you want to remove <strong>{{ domainToDelete }}</strong>? This will delete the identity from AWS SES and cannot be undone.
-          </p>
+    <!-- Delete confirm modal -->
+    <UModal v-model:open="showDeleteModal">
+      <template #content>
+        <div class="p-6 space-y-5">
+          <div>
+            <h3 class="text-lg font-semibold text-stone-900 dark:text-stone-100">
+              Remove Domain
+            </h3>
+            <p class="text-sm text-stone-500 dark:text-stone-400 mt-1">
+              Are you sure you want to remove <strong>{{ domainToDelete }}</strong>? This will delete the identity from AWS SES and cannot be undone.
+            </p>
+          </div>
+          <div class="flex justify-end gap-3 pt-2">
+            <UButton
+              variant="ghost"
+              color="neutral"
+              @click="showDeleteModal = false"
+            >
+              Cancel
+            </UButton>
+            <UButton
+              color="error"
+              :loading="deleting"
+              @click="deleteIdentity"
+            >
+              Remove
+            </UButton>
+          </div>
         </div>
-        <div class="flex justify-end gap-3 pt-2">
-          <UButton
-            variant="ghost"
-            color="neutral"
-            @click="showDeleteModal = false"
-          >
-            Cancel
-          </UButton>
-          <UButton
-            color="error"
-            :loading="deleting"
-            @click="deleteIdentity"
-          >
-            Remove
-          </UButton>
-        </div>
-      </div>
-    </template>
-  </UModal>
+      </template>
+    </UModal>
   </div>
 </template>
 

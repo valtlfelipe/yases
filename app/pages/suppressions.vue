@@ -104,7 +104,6 @@
           </span>
           <div class="flex gap-2">
             <UButton
-              size="sm"
               variant="soft"
               color="neutral"
               :disabled="page <= 1"
@@ -117,7 +116,6 @@
               Previous
             </UButton>
             <UButton
-              size="sm"
               variant="soft"
               color="neutral"
               :disabled="page >= totalPages"

@@ -20,7 +20,6 @@
           </p>
         </div>
         <UButton
-          size="sm"
           @click="showCreateModal = true"
         >
           <UIcon
