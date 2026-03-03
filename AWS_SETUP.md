@@ -84,8 +84,7 @@ This is needed only when running `setup:aws` and `add:identity` scripts.
 ### 1. Configure your `.env`
 
 ```bash
-cp apps/server/.env.example apps/server/.env
-cp apps/web/.env.example apps/web/.env
+cp .env.example apps/server/.env
 ```
 
 Fill in at minimum:
@@ -94,7 +93,7 @@ Fill in at minimum:
 AWS_REGION=us-east-1
 AWS_ACCESS_KEY_ID=AKIAxxxxxxxx
 AWS_SECRET_ACCESS_KEY=xxxxxxxxxx
-DATABASE_URL=postgres://...
+DATABASE_URL=postgres://email:email@postgres:5432/email_service
 ```
 
 ### 2. Run the AWS infrastructure setup
@@ -102,7 +101,7 @@ DATABASE_URL=postgres://...
 Your server must be deployed and reachable before this step so that SNS can confirm the subscription automatically.
 
 ```bash
-bun run setup:aws -- --webhook-url https://api.yourdomain.com/webhooks/ses
+bun run setup:aws --webhook-url https://api.yourdomain.com/webhooks/ses
 ```
 
 Options:
@@ -126,7 +125,7 @@ Add it to your `.env` and restart the server.
 ### 3. Add your sending domain
 
 ```bash
-bun run add:identity -- yourdomain.com
+bun run add:identity yourdomain.com
 ```
 
 Options:
@@ -168,7 +167,7 @@ _dmarc.yourdomain.com  TXT  "v=DMARC1; p=quarantine; rua=mailto:dmarc@yourdomain
 DKIM verification typically completes within 72 hours of DNS propagation.
 
 ```bash
-bun run add:identity -- yourdomain.com --check
+bun run add:identity yourdomain.com --check
 ```
 
 The command also syncs the status from SES back into the database.

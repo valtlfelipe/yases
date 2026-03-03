@@ -15,8 +15,6 @@ export default defineEventHandler(async (event) => {
     return { ok: true }
   }
 
-  console.log('[Webhook] Received SNS message with keys:', body)
-
   const messageType = body['Type'] as string | undefined
 
   if (messageType === 'SubscriptionConfirmation') {

@@ -12,6 +12,8 @@
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
     "create:admin": "bun run scripts/create-admin.ts",
+    "setup:aws": "bun run scripts/setup-aws.ts",
+    "add:identity": "bun run scripts/add-identity.ts",
     "lint": "eslint .",
     "typecheck": "nuxt typecheck"
   },
