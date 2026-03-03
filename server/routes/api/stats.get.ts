@@ -84,6 +84,7 @@ export default defineEventHandler(async (event) => {
   const rates = {
     delivery: totalAttempted > 0 ? Math.round((events.delivered / totalAttempted) * 1000) / 10 : 0,
     bounce: totalAttempted > 0 ? Math.round((events.bounced / totalAttempted) * 1000) / 10 : 0,
+    complaint: totalAttempted > 0 ? Math.round((events.complained / totalAttempted) * 1000) / 10 : 0,
     open: events.delivered > 0 ? Math.round((events.opened / events.delivered) * 1000) / 10 : 0,
     click: events.delivered > 0 ? Math.round((events.clicked / events.delivered) * 1000) / 10 : 0,
   }

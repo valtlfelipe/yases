@@ -88,17 +88,12 @@ bun run setup:aws --webhook-url https://api.yourdomain.com/webhooks/ses
 
 Add the resulting `SES_CONFIGURATION_SET` to your `apps/server/.env` file and restart the containers.
 
-Next, add your sending domain:
+Next, add your sending domain via the dashboard:
 
-```bash
-bun run add:identity yourdomain.com
-```
-
-The script will output DNS records you need to add (DKIM, MAIL FROM, DMARC). After adding them to your DNS provider, check verification status:
-
-```bash
-bun run add:identity yourdomain.com --check
-```
+1. Open the dashboard and navigate to **Domains**
+2. Click **Add Domain** and enter your domain name
+3. Copy the DNS records shown (DKIM, MAIL FROM, DMARC) and add them to your DNS provider
+4. Once DNS propagates (up to 72 hours), click the **sync** button on the domain row to update its verification status
 
 Finally, request production access in AWS Console → SES → Account dashboard (if you're still in sandbox).
 
@@ -108,7 +103,7 @@ See [AWS_SETUP.md](AWS_SETUP.md) for detailed AWS configuration instructions.
 
 After creating your account:
 
-1. Navigate to `/settings/api-keys` in the dashboard
+1. Navigate to **Settings** in the dashboard
 2. Click "Create API Key"
 3. Copy the generated key — it will only be shown once
 
@@ -191,26 +186,6 @@ bun run setup:aws --webhook-url https://api.yourdomain.com/webhooks/ses
 | `--webhook-url` | *(required)* | Public HTTPS URL of your `/webhooks/ses` endpoint |
 | `--config-set` | `email-service` | SES configuration set name |
 | `--topic-name` | `email-service-notifications` | SNS topic name |
-
-### `bun run add:identity`
-
-Adds or checks a sending domain identity in SES.
-
-```bash
-# Add a new domain
-bun run add:identity yourdomain.com
-
-# Add with custom MAIL FROM subdomain
-bun run add:identity yourdomain.com --mail-from mail
-
-# Check verification status (without making changes)
-bun run add:identity yourdomain.com --check
-```
-
-| Flag | Default | Description |
-|------|---------|-------------|
-| `--mail-from` | `mail` | Subdomain for MAIL FROM (e.g. `mail` → `mail.yourdomain.com`) |
-| `--check` | — | Check current verification status without making changes |
 
 ### `bun run create:admin`
 

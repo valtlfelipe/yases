@@ -36,11 +36,11 @@
     />
 
     <template v-else-if="stats">
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <div class="stat-card animate-fade-in-up stagger-1">
           <div class="flex items-center justify-between mb-3">
             <span class="text-xs font-medium text-stone-500 dark:text-stone-400 uppercase tracking-wider">Total Sent</span>
-            <div class="p-2 rounded-lg bg-blue-50 dark:bg-blue-900/30">
+            <div class="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-lg bg-blue-50 dark:bg-blue-900/30">
               <UIcon
                 name="i-heroicons-paper-airplane"
                 class="w-4 h-4 text-blue-600 dark:text-blue-400"
@@ -58,7 +58,7 @@
         <div class="stat-card animate-fade-in-up stagger-2">
           <div class="flex items-center justify-between mb-3">
             <span class="text-xs font-medium text-stone-500 dark:text-stone-400 uppercase tracking-wider">Delivery Rate</span>
-            <div class="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-900/30">
+            <div class="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-lg bg-emerald-50 dark:bg-emerald-900/30">
               <UIcon
                 name="i-heroicons-check-circle"
                 class="w-4 h-4 text-emerald-600 dark:text-emerald-400"
@@ -76,7 +76,7 @@
         <div class="stat-card animate-fade-in-up stagger-3">
           <div class="flex items-center justify-between mb-3">
             <span class="text-xs font-medium text-stone-500 dark:text-stone-400 uppercase tracking-wider">Bounce Rate</span>
-            <div class="p-2 rounded-lg bg-red-50 dark:bg-red-900/30">
+            <div class="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-lg bg-red-50 dark:bg-red-900/30">
               <UIcon
                 name="i-heroicons-arrow-uturn-left"
                 class="w-4 h-4 text-red-600 dark:text-red-400"
@@ -93,8 +93,26 @@
 
         <div class="stat-card animate-fade-in-up stagger-4">
           <div class="flex items-center justify-between mb-3">
+            <span class="text-xs font-medium text-stone-500 dark:text-stone-400 uppercase tracking-wider">Complaint Rate</span>
+            <div class="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-lg bg-orange-50 dark:bg-orange-900/30">
+              <UIcon
+                name="i-heroicons-exclamation-circle"
+                class="w-4 h-4 text-orange-600 dark:text-orange-400"
+              />
+            </div>
+          </div>
+          <p class="text-2xl font-semibold text-stone-900 dark:text-stone-100">
+            {{ stats.rates.complaint }}%
+          </p>
+          <p class="mt-1 text-xs text-stone-400 dark:text-stone-500">
+            {{ formatNumber(stats.events.complained) }} complaints
+          </p>
+        </div>
+
+        <div class="stat-card animate-fade-in-up stagger-5">
+          <div class="flex items-center justify-between mb-3">
             <span class="text-xs font-medium text-stone-500 dark:text-stone-400 uppercase tracking-wider">Open Rate</span>
-            <div class="p-2 rounded-lg bg-violet-50 dark:bg-violet-900/30">
+            <div class="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-lg bg-violet-50 dark:bg-violet-900/30">
               <UIcon
                 name="i-heroicons-envelope-open"
                 class="w-4 h-4 text-violet-600 dark:text-violet-400"
@@ -111,10 +129,10 @@
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div class="stat-card animate-fade-in-up stagger-5">
+        <div class="stat-card animate-fade-in-up stagger-6">
           <div class="flex items-center justify-between mb-3">
             <span class="text-xs font-medium text-stone-500 dark:text-stone-400 uppercase tracking-wider">Queued</span>
-            <div class="p-2 rounded-lg bg-amber-50 dark:bg-amber-900/30">
+            <div class="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-lg bg-amber-50 dark:bg-amber-900/30">
               <UIcon
                 name="i-heroicons-queue-list"
                 class="w-4 h-4 text-amber-600 dark:text-amber-400"
@@ -126,10 +144,10 @@
           </p>
         </div>
 
-        <div class="stat-card animate-fade-in-up stagger-6">
+        <div class="stat-card animate-fade-in-up stagger-7">
           <div class="flex items-center justify-between mb-3">
             <span class="text-xs font-medium text-stone-500 dark:text-stone-400 uppercase tracking-wider">Failed</span>
-            <div class="p-2 rounded-lg bg-red-50 dark:bg-red-900/30">
+            <div class="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-lg bg-red-50 dark:bg-red-900/30">
               <UIcon
                 name="i-heroicons-x-circle"
                 class="w-4 h-4 text-red-600 dark:text-red-400"
@@ -141,10 +159,10 @@
           </p>
         </div>
 
-        <div class="stat-card animate-fade-in-up stagger-7">
+        <div class="stat-card animate-fade-in-up stagger-8">
           <div class="flex items-center justify-between mb-3">
             <span class="text-xs font-medium text-stone-500 dark:text-stone-400 uppercase tracking-wider">Click Rate</span>
-            <div class="p-2 rounded-lg bg-cyan-50 dark:bg-cyan-900/30">
+            <div class="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-lg bg-cyan-50 dark:bg-cyan-900/30">
               <UIcon
                 name="i-heroicons-cursor-arrow-rays"
                 class="w-4 h-4 text-cyan-600 dark:text-cyan-400"
@@ -160,7 +178,7 @@
         </div>
       </div>
 
-      <div class="card-elevated p-6 animate-fade-in-up stagger-8">
+      <div class="card-elevated p-6 animate-fade-in-up stagger-9">
         <div class="flex items-center justify-between mb-6">
           <div>
             <h3 class="text-lg font-display text-stone-900 dark:text-stone-100">
@@ -191,7 +209,7 @@
         </div>
       </div>
 
-      <div class="card-elevated p-6 animate-fade-in-up stagger-8">
+      <div class="card-elevated p-6 animate-fade-in-up stagger-10">
         <div class="flex items-center justify-between mb-6">
           <div>
             <h3 class="text-lg font-display text-stone-900 dark:text-stone-100">
