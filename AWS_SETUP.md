@@ -60,7 +60,8 @@ This is needed to setup SES sending and webhooks, as managing domains and sendin
                 "ses:GetTenant",
                 "ses:DeleteTenant",
                 "ses:CreateTenantResourceAssociation",
-                "ses:DeleteTenantResourceAssociation"
+                "ses:DeleteTenantResourceAssociation",
+                "ses:GetReputationEntity"
             ],
             "Resource": "*"
         },

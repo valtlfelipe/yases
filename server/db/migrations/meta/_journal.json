@@ -50,6 +50,13 @@
       "when": 1772569149550,
       "tag": "0007_sleepy_lizard",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1772570856814,
+      "tag": "0008_cold_the_santerians",
+      "breakpoints": true
     }
   ]
 }

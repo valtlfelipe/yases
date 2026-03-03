@@ -81,6 +81,9 @@
                     Status
                   </th>
                   <th class="px-4 py-3 text-left text-xs font-medium text-stone-500 dark:text-stone-400 uppercase tracking-wider">
+                    Health
+                  </th>
+                  <th class="px-4 py-3 text-left text-xs font-medium text-stone-500 dark:text-stone-400 uppercase tracking-wider">
                     DKIM
                   </th>
                   <th class="px-4 py-3 text-left text-xs font-medium text-stone-500 dark:text-stone-400 uppercase tracking-wider">
@@ -103,6 +106,9 @@
                   </td>
                   <td class="px-4 py-3">
                     <StatusBadge :status="item.status" />
+                  </td>
+                  <td class="px-4 py-3">
+                    <HealthBadge :domain="item.domain" :has-tenant="!!item.tenantName" />
                   </td>
                   <td class="px-4 py-3">
                     <span class="text-sm text-stone-500 dark:text-stone-400">{{ item.dkimStatus ?? '—' }}</span>

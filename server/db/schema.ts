@@ -7,6 +7,7 @@ import {
   integer,
   jsonb,
   boolean,
+  index,
 } from 'drizzle-orm/pg-core'
 
 // Better Auth tables
@@ -58,7 +59,9 @@ export const verification = pgTable('verification', {
   expiresAt: timestamp('expires_at').notNull(),
   createdAt: timestamp('created_at'),
   updatedAt: timestamp('updated_at'),
-})
+}, (table) => [
+  index('idx_verification_identifier').on(table.identifier),
+])
 
 export const identityStatusEnum = pgEnum('identity_status', [
   'pending',
@@ -119,7 +122,13 @@ export const emailSends = pgTable('email_sends', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
   sentAt: timestamp('sent_at'),
-})
+}, (table) => [
+  index('idx_email_sends_status').on(table.status),
+  index('idx_email_sends_created_at').on(table.createdAt),
+  index('idx_email_sends_to').on(table.to),
+  index('idx_email_sends_job_id').on(table.jobId),
+  index('idx_email_sends_ses_message_id').on(table.sesMessageId),
+])
 
 export const emailIdentities = pgTable('email_identities', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -157,7 +166,9 @@ export const apikey = pgTable('apikey', {
   updatedAt: timestamp('updated_at').notNull(),
   permissions: text('permissions'),
   metadata: text('metadata'),
-})
+}, (table) => [
+  index('idx_apikey_key').on(table.key),
+])
 
 export const emailEvents = pgTable('email_events', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -169,4 +180,7 @@ export const emailEvents = pgTable('email_events', {
   rawPayload: jsonb('raw_payload').notNull(),
   metadata: jsonb('metadata'),
   occurredAt: timestamp('occurred_at').defaultNow().notNull(),
-})
+}, (table) => [
+  index('idx_email_events_event_type').on(table.eventType),
+  index('idx_email_events_occurred_at').on(table.occurredAt),
+])
