@@ -29,7 +29,7 @@
     <UAlert
       v-else-if="error"
       icon="i-heroicons-exclamation-triangle"
-      color="red"
+      color="error"
       variant="soft"
       title="Failed to load stats"
       :description="String(error)"

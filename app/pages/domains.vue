@@ -29,7 +29,7 @@
       <UAlert
         v-else-if="error"
         icon="i-heroicons-exclamation-triangle"
-        color="red"
+        color="error"
         variant="soft"
         title="Failed to load identities"
         :description="String(error)"
@@ -112,7 +112,7 @@
             <UButton
               size="sm"
               variant="soft"
-              color="gray"
+              color="neutral"
               :disabled="page <= 1"
               @click="page--"
             >
@@ -125,7 +125,7 @@
             <UButton
               size="sm"
               variant="soft"
-              color="gray"
+              color="neutral"
               :disabled="page >= totalPages"
               @click="page++"
             >

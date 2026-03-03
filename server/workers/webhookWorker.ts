@@ -1,11 +1,11 @@
 import { Worker, type Job } from 'bullmq'
 import { eq } from 'drizzle-orm'
-import { db } from '../db/index.ts'
-import { emailEvents, emailSends } from '../db/schema.ts'
-import { SuppressionService } from '../services/SuppressionService.ts'
-import { WEBHOOK_QUEUE_NAME } from '../queue/webhookQueue.ts'
-import { bullMQConnection } from '../queue/connection.ts'
-import type { WebhookJobData } from '../queue/types.ts'
+import { db } from '../db/index'
+import { emailEvents, emailSends } from '../db/schema'
+import { SuppressionService } from '../services/SuppressionService'
+import { WEBHOOK_QUEUE_NAME } from '../queue/webhookQueue'
+import { bullMQConnection } from '../queue/connection'
+import type { WebhookJobData } from '../queue/types'
 
 const suppressionService = new SuppressionService()
 

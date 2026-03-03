@@ -12,8 +12,6 @@ export default defineNuxtConfig({
   },
   css: ['~/assets/css/main.css'],
   ui: {
-    global: true,
-    icons: ['heroicons'],
   },
   runtimeConfig: {
     public: {

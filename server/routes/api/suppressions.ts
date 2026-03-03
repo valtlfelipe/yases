@@ -1,13 +1,15 @@
-import { auth } from '../../lib/auth.ts'
-import { SuppressionService } from '../../services/SuppressionService.ts'
+import { auth } from '../../lib/auth'
+import { SuppressionService } from '../../services/SuppressionService'
 
-const suppressionReasons = [
+const _suppressionReasons = [
   'permanent_bounce',
   'transient_bounce',
   'complaint',
   'invalid',
   'manual',
 ] as const
+
+type SuppressionReason = typeof _suppressionReasons[number]
 
 const suppressionService = new SuppressionService()
 
@@ -23,7 +25,8 @@ export default defineEventHandler(async (event) => {
       if (!result.valid) {
         throw createError({ statusCode: 401, statusMessage: 'Invalid API key' })
       }
-      session = { user: result.key as any, session: null }
+      // @ts-expect-error - API key authentication creates a minimal session object
+      session = { user: result.key, session: null }
     }
   }
 
@@ -41,7 +44,7 @@ export default defineEventHandler(async (event) => {
     const query = getQuery(event)
     const page = Number(query.page) || 1
     const limit = Math.min(Number(query.limit) || 20, 100)
-    const reason = query.reason as (typeof suppressionReasons)[number] | undefined
+    const reason = query.reason as SuppressionReason | undefined
 
     const result = await suppressionService.list(page, limit, reason)
     return { items: result.items, total: result.total, page, limit }
@@ -60,7 +63,7 @@ export default defineEventHandler(async (event) => {
   if (method === 'POST') {
     const body = await readBody(event)
     const email = body.email as string
-    const reason = (body.reason as (typeof suppressionReasons)[number]) || 'manual'
+    const reason = (body.reason as SuppressionReason) || 'manual'
     const detail = body.detail as string | undefined
 
     await suppressionService.add(email, reason, detail)

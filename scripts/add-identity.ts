@@ -14,8 +14,8 @@ import {
   CreateEmailIdentityCommand,
   GetEmailIdentityCommand,
   PutEmailIdentityMailFromAttributesCommand,
-  type GetEmailIdentityCommandOutput,
 } from '@aws-sdk/client-sesv2'
+import type { GetEmailIdentityCommandOutput as _GetEmailIdentityCommandOutput } from '@aws-sdk/client-sesv2'
 import { drizzle } from 'drizzle-orm/node-postgres'
 import { Pool } from 'pg'
 import { eq } from 'drizzle-orm'
@@ -157,8 +157,6 @@ if (checkOnly) {
 console.log(`\n\x1b[1mAdding identity: ${domain}\x1b[0m\n`)
 
 // Create or retrieve SES identity
-let identity: GetEmailIdentityCommandOutput
-
 try {
   await ses.send(new CreateEmailIdentityCommand({ EmailIdentity: domain }))
   ok('SES identity created')
@@ -174,7 +172,7 @@ catch (err) {
 }
 
 // Fetch current attributes (DKIM tokens are returned here)
-identity = await ses.send(new GetEmailIdentityCommand({ EmailIdentity: domain }))
+const identity = await ses.send(new GetEmailIdentityCommand({ EmailIdentity: domain }))
 
 const dkimTokens = identity.DkimAttributes?.Tokens ?? []
 const dkimStatus = identity.DkimAttributes?.Status ?? 'PENDING'

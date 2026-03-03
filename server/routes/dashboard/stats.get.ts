@@ -1,7 +1,7 @@
-import { db } from '../../db/index.ts'
-import { emailSends, emailEvents, suppressionList } from '../../db/schema.ts'
+import { db } from '../../db/index'
+import { emailSends, emailEvents, suppressionList } from '../../db/schema'
 import { sql, count } from 'drizzle-orm'
-import { auth } from '../../lib/auth.ts'
+import { auth } from '../../lib/auth'
 
 export default defineEventHandler(async (event) => {
   const session = await auth.api.getSession({ headers: event.headers })

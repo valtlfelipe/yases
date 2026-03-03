@@ -1,11 +1,11 @@
-import { auth } from '../../../lib/auth.ts'
+import { auth } from '../../../lib/auth'
 import { eq } from 'drizzle-orm'
-import { db } from '../../../db/index.ts'
-import { emailSends, emailIdentities } from '../../../db/schema.ts'
-import { EmailValidationService } from '../../../services/EmailValidationService.ts'
-import { SuppressionService } from '../../../services/SuppressionService.ts'
-import { emailQueue } from '../../../queue/index.ts'
-import { extractEmail, isValidEmailField } from '../../../utils/email.ts'
+import { db } from '../../../db/index'
+import { emailSends, emailIdentities } from '../../../db/schema'
+import { EmailValidationService } from '../../../services/EmailValidationService'
+import { SuppressionService } from '../../../services/SuppressionService'
+import { emailQueue } from '../../../queue/index'
+import { extractEmail, isValidEmailField } from '../../../utils/email'
 import { z } from 'zod'
 
 const emailField = z.string().refine(isValidEmailField, 'Invalid email address')

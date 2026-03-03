@@ -1,9 +1,9 @@
 import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { apiKey } from '@better-auth/api-key'
-import { db } from '../db/index.ts'
-import { env } from '../lib/env.ts'
-import { redis } from '../cache/redis.ts'
+import { db } from '../db/index'
+import { env } from '../lib/env'
+import { redis } from '../cache/redis'
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, { provider: 'pg' }),

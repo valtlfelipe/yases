@@ -1,6 +1,6 @@
-import { auth } from '../../lib/auth.ts'
-import { db } from '../../db/index.ts'
-import { emailSends, emailEvents, suppressionList } from '../../db/schema.ts'
+import { auth } from '../../lib/auth'
+import { db } from '../../db/index'
+import { emailSends, emailEvents, suppressionList } from '../../db/schema'
 import { sql, count } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
@@ -15,7 +15,8 @@ export default defineEventHandler(async (event) => {
       if (!result.valid) {
         throw createError({ statusCode: 401, statusMessage: 'Invalid API key' })
       }
-      session = { user: result.key as any, session: null }
+      // @ts-expect-error - API key authentication creates a minimal session object
+      session = { user: result.key, session: null }
     }
   }
 

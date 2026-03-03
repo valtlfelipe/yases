@@ -1,5 +1,5 @@
-import { redis } from '../cache/redis.ts'
-import { env } from '../lib/env.ts'
+import { redis } from '../cache/redis'
+import { env } from '../lib/env'
 
 const BLOCKLIST_KEY = 'email_validation:blocklist'
 const BLOCKLIST_SENTINEL_KEY = 'email_validation:blocklist:loaded_at'

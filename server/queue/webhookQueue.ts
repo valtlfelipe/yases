@@ -1,6 +1,6 @@
 import { Queue } from 'bullmq'
-import { bullMQConnection } from './connection.ts'
-import type { WebhookJobData } from './types.ts'
+import { bullMQConnection } from './connection'
+import type { WebhookJobData } from './types'
 
 export const WEBHOOK_QUEUE_NAME = 'webhook-process'
 

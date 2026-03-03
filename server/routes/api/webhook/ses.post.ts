@@ -1,4 +1,4 @@
-import { webhookQueue } from '../../queue/webhookQueue.ts'
+import { webhookQueue } from '../../../queue/webhookQueue'
 
 export default defineEventHandler(async (event) => {
   if (event.method !== 'POST') {

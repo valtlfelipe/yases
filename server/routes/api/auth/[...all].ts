@@ -1,6 +1,6 @@
-import { auth } from '../../../lib/auth.ts'
-// import { db } from "../../../db/index.ts";
-// import { user } from "../../../db/schema.ts";
+import { auth } from '../../../lib/auth'
+// import { db } from "../../../db/index";
+// import { user } from "../../../db/schema";
 // import { count } from "drizzle-orm";
 
 // export default defineEventHandler(async (event) => {

@@ -1,4 +1,4 @@
-import { env } from '../lib/env.ts'
+import { env } from '../lib/env'
 
 export function bullMQConnection() {
   const url = new URL(env.REDIS_URL)

@@ -1,6 +1,6 @@
 import { Queue } from 'bullmq'
-import { bullMQConnection } from './connection.ts'
-import type { EmailJobData } from './types.ts'
+import { bullMQConnection } from './connection'
+import type { EmailJobData } from './types'
 
 export const QUEUE_NAME = 'email-send'
 

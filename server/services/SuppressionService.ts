@@ -1,14 +1,14 @@
 import { eq } from 'drizzle-orm'
-import { db } from '../db/index.ts'
-import { suppressionList } from '../db/schema.ts'
-import { redis } from '../cache/redis.ts'
+import { db } from '../db/index'
+import { suppressionList } from '../db/schema'
+import { redis } from '../cache/redis'
 
 type SuppressionReason
   = | 'permanent_bounce'
-    | 'transient_bounce'
-    | 'complaint'
-    | 'invalid'
-    | 'manual'
+  | 'transient_bounce'
+  | 'complaint'
+  | 'invalid'
+  | 'manual'
 
 const CACHE_PREFIX = 'suppression:email:'
 const CACHE_TTL_SECONDS = 3600 // 1h

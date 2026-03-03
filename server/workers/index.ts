@@ -1,6 +1,6 @@
-import '../lib/env.ts'
-import { createEmailWorker } from './emailWorker.ts'
-import { createWebhookWorker } from './webhookWorker.ts'
+import '../lib/env'
+import { createEmailWorker } from './emailWorker'
+import { createWebhookWorker } from './webhookWorker'
 
 const emailWorker = createEmailWorker()
 const webhookWorker = createWebhookWorker()

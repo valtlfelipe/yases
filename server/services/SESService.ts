@@ -3,7 +3,7 @@ import {
   SendEmailCommand,
   type SendEmailCommandInput,
 } from '@aws-sdk/client-ses'
-import { env } from '../lib/env.ts'
+import { env } from '../lib/env'
 
 const sesClient = new SESClient({
   region: env.AWS_REGION,

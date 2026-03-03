@@ -46,7 +46,7 @@
       <UAlert
         v-else-if="loadError"
         icon="i-heroicons-exclamation-triangle"
-        color="red"
+        color="error"
         variant="soft"
         title="Failed to load API keys"
         :description="loadError"
@@ -125,7 +125,7 @@
                 <UButton
                   size="xs"
                   variant="ghost"
-                  color="red"
+                  color="error"
                   :loading="deletingId === k.id"
                   @click="confirmDelete(k)"
                 >
@@ -176,7 +176,7 @@
           <div v-if="createError">
             <UAlert
               icon="i-heroicons-exclamation-triangle"
-              color="red"
+              color="error"
               variant="soft"
               :title="createError"
             />
@@ -185,7 +185,7 @@
           <div class="flex justify-end gap-3 pt-2">
             <UButton
               variant="ghost"
-              color="gray"
+              color="neutral"
               @click="closeCreateModal"
             >
               Cancel
@@ -222,7 +222,7 @@
             <UButton
               size="xs"
               variant="ghost"
-              color="gray"
+              color="neutral"
               @click="copyKey"
             >
               <UIcon
@@ -234,7 +234,7 @@
 
           <UAlert
             icon="i-heroicons-exclamation-triangle"
-            color="yellow"
+            color="warning"
             variant="soft"
             title="Store this key securely — it won't be shown again."
           />
@@ -263,13 +263,13 @@
           <div class="flex justify-end gap-3 pt-2">
             <UButton
               variant="ghost"
-              color="gray"
+              color="neutral"
               @click="showDeleteModal = false"
             >
               Cancel
             </UButton>
             <UButton
-              color="red"
+              color="error"
               :loading="deletingId !== null"
               @click="deleteKey"
             >
@@ -346,7 +346,7 @@ async function createKey() {
       ...(newKeyExpiry.value ? { expiresIn: newKeyExpiry.value } : {}),
     })
     if (error) throw new Error(error.message ?? 'Failed to create key')
-    revealedKey.value = (data as any).key
+    revealedKey.value = (data as { key: string }).key
     closeCreateModal()
     showRevealModal.value = true
     await loadKeys()

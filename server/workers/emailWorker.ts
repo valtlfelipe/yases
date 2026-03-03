@@ -1,14 +1,14 @@
 import { Worker, type Job } from 'bullmq'
 import { eq } from 'drizzle-orm'
-import { db } from '../db/index.ts'
-import { emailSends, emailEvents } from '../db/schema.ts'
-import { SuppressionService } from '../services/SuppressionService.ts'
-import { SESService } from '../services/SESService.ts'
-import { QUEUE_NAME } from '../queue/index.ts'
-import type { EmailJobData } from '../queue/types.ts'
-import { env } from '../lib/env.ts'
-import { bullMQConnection } from '../queue/connection.ts'
-import { extractEmail } from '../utils/email.ts'
+import { db } from '../db/index'
+import { emailSends, emailEvents } from '../db/schema'
+import { SuppressionService } from '../services/SuppressionService'
+import { SESService } from '../services/SESService'
+import { QUEUE_NAME } from '../queue/index'
+import type { EmailJobData } from '../queue/types'
+import { env } from '../lib/env'
+import { bullMQConnection } from '../queue/connection'
+import { extractEmail } from '../utils/email'
 
 const PERMANENT_SES_ERRORS = new Set([
   'MessageRejected',
