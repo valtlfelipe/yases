@@ -213,22 +213,22 @@
         <div class="flex items-center justify-between mb-6">
           <div>
             <h3 class="text-lg font-display text-stone-900 dark:text-stone-100">
-              Recent Emails
+              Recent Events
             </h3>
             <p class="text-sm text-stone-500 dark:text-stone-400 mt-0.5">
-              Your latest sent emails
+              Latest delivery events from SES
             </p>
           </div>
           <NuxtLink
             to="/emails"
             class="text-sm font-medium text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100 transition-colors"
           >
-            View all
+            View emails
           </NuxtLink>
         </div>
 
         <div
-          v-if="emailsPending"
+          v-if="eventsPending"
           class="flex items-center justify-center py-8"
         >
           <UIcon
@@ -238,24 +238,18 @@
         </div>
 
         <div
-          v-else-if="recentEmails.length === 0"
+          v-else-if="recentEvents.length === 0"
           class="empty-state"
         >
           <div class="empty-state-icon">
             <UIcon
-              name="i-heroicons-envelope"
+              name="i-heroicons-bolt"
               class="w-8 h-8 text-stone-400"
             />
           </div>
           <p class="text-stone-500 dark:text-stone-400">
-            No emails sent yet
+            No events yet
           </p>
-          <NuxtLink
-            to="/emails"
-            class="mt-3 text-sm font-medium text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100"
-          >
-            Send your first email
-          </NuxtLink>
         </div>
 
         <div
@@ -266,13 +260,13 @@
             <thead class="bg-stone-50 dark:bg-stone-800/50">
               <tr>
                 <th class="px-4 py-3 text-left text-xs font-medium text-stone-500 dark:text-stone-400 uppercase tracking-wider">
+                  Event
+                </th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-stone-500 dark:text-stone-400 uppercase tracking-wider">
                   To
                 </th>
                 <th class="px-4 py-3 text-left text-xs font-medium text-stone-500 dark:text-stone-400 uppercase tracking-wider">
                   Subject
-                </th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-stone-500 dark:text-stone-400 uppercase tracking-wider">
-                  Status
                 </th>
                 <th class="px-4 py-3 text-left text-xs font-medium text-stone-500 dark:text-stone-400 uppercase tracking-wider">
                   Date
@@ -282,25 +276,25 @@
             </thead>
             <tbody class="divide-y divide-stone-200 dark:divide-stone-800">
               <tr
-                v-for="email in recentEmails"
-                :key="email.id"
+                v-for="ev in recentEvents"
+                :key="ev.id"
                 class="table-row-animate"
               >
                 <td class="px-4 py-3">
-                  <span class="text-sm text-stone-700 dark:text-stone-300 truncate max-w-[180px] block">{{ email.to }}</span>
+                  <EventTypeBadge :type="ev.eventType" />
                 </td>
                 <td class="px-4 py-3">
-                  <span class="text-sm text-stone-700 dark:text-stone-300 truncate max-w-[240px] block">{{ email.subject }}</span>
+                  <span class="text-sm text-stone-700 dark:text-stone-300 truncate max-w-[180px] block">{{ ev.to }}</span>
                 </td>
                 <td class="px-4 py-3">
-                  <StatusBadge :status="email.status" />
+                  <span class="text-sm text-stone-700 dark:text-stone-300 truncate max-w-[240px] block">{{ ev.subject }}</span>
                 </td>
                 <td class="px-4 py-3">
-                  <span class="text-sm text-stone-500">{{ formatDate(email.createdAt) }}</span>
+                  <span class="text-sm text-stone-500">{{ formatDate(ev.occurredAt) }}</span>
                 </td>
                 <td class="px-4 py-3 text-right">
                   <NuxtLink
-                    :to="`/emails/${email.id}`"
+                    :to="`/emails/${ev.emailSendId}`"
                     class="text-sm font-medium text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100 transition-colors"
                   >
                     View
@@ -318,13 +312,13 @@
 <script setup lang="ts">
 const { stats, pending, error } = useStats()
 
-const { data: emailsData, pending: emailsPending } = useFetch('/api/emails', {
+const { data: eventsData, pending: eventsPending } = useFetch('/api/events', {
   credentials: 'include',
-  query: { page: 1, limit: 5 },
-  key: 'recent-emails',
+  query: { limit: 10 },
+  key: 'recent-events',
 })
 
-const recentEmails = computed(() => emailsData.value?.items ?? [])
+const recentEvents = computed(() => eventsData.value ?? [])
 
 function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString('en-US', {
