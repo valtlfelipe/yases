@@ -6,7 +6,8 @@
       "Bash(bunx tsc:*)",
       "WebFetch(domain:better-auth.com)",
       "WebFetch(domain:ui.nuxt.com)",
-      "Bash(bun run:*)"
+      "Bash(bun run:*)",
+      "Bash(ls:*)"
     ]
   }
 }

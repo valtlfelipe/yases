@@ -86,7 +86,6 @@
 definePageMeta({ layout: false })
 
 const route = useRoute()
-const config = useRuntimeConfig()
 
 const token = route.query.token as string | undefined
 const status = ref<'idle' | 'pending' | 'success' | 'error'>(token ? 'pending' : 'idle')
@@ -97,7 +96,6 @@ onMounted(async () => {
 
   try {
     const data = await $fetch<{ success: boolean, email: string }>('/api/unsubscribe', {
-      baseURL: config.public.apiUrl,
       params: { token },
     })
     email.value = data.email
