@@ -21,7 +21,7 @@
     </div>
 
     <div
-      v-if="pending"
+      v-if="pending && !stats"
       class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
     >
       <div
@@ -36,7 +36,7 @@
     </div>
 
     <UAlert
-      v-else-if="error"
+      v-else-if="error && !stats"
       icon="i-heroicons-exclamation-triangle"
       color="error"
       variant="soft"
@@ -237,7 +237,7 @@
         </div>
 
         <div
-          v-if="eventsPending"
+          v-if="eventsPending && recentEvents.length === 0"
           class="flex items-center justify-center py-8"
         >
           <UIcon
