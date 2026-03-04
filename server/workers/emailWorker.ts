@@ -22,7 +22,7 @@ const suppressionService = new SuppressionService()
 const sesService = new SESService()
 
 async function processEmailJob(job: Job<EmailJobData>): Promise<void> {
-  const { emailSendId, to, from, subject, html, text, replyTo, tenantName } = job.data
+  const { emailSendId, to, from, subject, html, text, replyTo, tenantName, unsubscribeUrl } = job.data
 
   await db
     .update(emailSends)
@@ -48,7 +48,7 @@ async function processEmailJob(job: Job<EmailJobData>): Promise<void> {
   }
 
   try {
-    const { sesMessageId } = await sesService.send({ to, from, subject, html, text, replyTo, tenantName })
+    const { sesMessageId } = await sesService.send({ to, from, subject, html, text, replyTo, tenantName, unsubscribeUrl })
 
     await db
       .update(emailSends)

@@ -13,5 +13,6 @@ export interface EmailJobData {
   text?: string
   replyTo?: string
   tenantName?: string
+  unsubscribeUrl?: string
   enqueuedAt: string
 }

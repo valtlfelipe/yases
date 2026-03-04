@@ -316,10 +316,12 @@ const reasonSelectItems = [
   { label: 'Complaint', value: 'complaint' },
   { label: 'Invalid', value: 'invalid' },
   { label: 'Manual', value: 'manual' },
+  { label: 'Unsubscribed', value: 'unsubscribed' },
 ]
 
 const reasonAddItems = [
   { label: 'Manual', value: 'manual' },
+  { label: 'Unsubscribed', value: 'unsubscribed' },
   { label: 'Complaint', value: 'complaint' },
   { label: 'Invalid', value: 'invalid' },
   { label: 'Permanent bounce', value: 'permanent_bounce' },

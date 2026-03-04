@@ -76,6 +76,7 @@ export const suppressionReasonEnum = pgEnum('suppression_reason', [
   'complaint',
   'invalid',
   'manual',
+  'unsubscribed',
 ])
 
 export const emailStatusEnum = pgEnum('email_status', [

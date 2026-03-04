@@ -6,6 +6,8 @@ import { EmailValidationService } from '../../../services/EmailValidationService
 import { SuppressionService } from '../../../services/SuppressionService'
 import { emailQueue } from '../../../queue/index'
 import { extractEmail, isValidEmailField } from '../../../utils/email'
+import { signUnsubscribeToken } from '../../../lib/unsubscribeToken'
+import { env } from '../../../lib/env'
 import { z } from 'zod'
 
 const emailField = z.string().refine(isValidEmailField, 'Invalid email address')
@@ -18,6 +20,7 @@ const sendSchema = z
     html: z.string().optional(),
     text: z.string().optional(),
     replyTo: emailField.optional(),
+    type: z.enum(['transactional', 'marketing']).default('transactional'),
   })
   .refine(d => d.html || d.text, { message: 'html or text is required' })
 
@@ -67,9 +70,27 @@ export default defineEventHandler(async (event) => {
     return { error: 'Validation failed', details: parsed.error.flatten() }
   }
 
-  const { to, from, subject, html, text, replyTo } = parsed.data
+  let { to, from, subject, html, text, replyTo } = parsed.data
+  const { type } = parsed.data
+  let unsubscribeUrl: string | undefined
   const toEmail = extractEmail(to)
   const fromEmail = extractEmail(from)
+
+  if (type === 'marketing') {
+    const hasPlaceholder = html?.includes('{{unsubscribeUrl}}') || text?.includes('{{unsubscribeUrl}}')
+    if (!hasPlaceholder) {
+      setResponseStatus(event, 400)
+      return {
+        error: 'MISSING_UNSUBSCRIBE_URL',
+        detail: 'Marketing emails must include {{unsubscribeUrl}} placeholder in html or text body',
+      }
+    }
+
+    const token = signUnsubscribeToken(toEmail, env.TOKEN_SECRET)
+    unsubscribeUrl = `${env.BETTER_AUTH_URL}/unsubscribe?token=${token}`
+    html = html?.replaceAll('{{unsubscribeUrl}}', unsubscribeUrl)
+    text = text?.replaceAll('{{unsubscribeUrl}}', unsubscribeUrl)
+  }
 
   const identity = await getIdentity(fromEmail)
   if (identity?.status !== 'verified') {
@@ -93,7 +114,10 @@ export default defineEventHandler(async (event) => {
   const suppression = await suppressionService.isSuppressed(toEmail)
   const fromDomain = extractEmail(from).split('@')[1] ?? null
 
-  if (suppression) {
+  // Transactional emails bypass unsubscribe suppression; all other reasons still block
+  const isBlocked = suppression && (type === 'marketing' || suppression.reason !== 'unsubscribed')
+
+  if (isBlocked) {
     const [send] = await db
       .insert(emailSends)
       .values({
@@ -157,6 +181,7 @@ export default defineEventHandler(async (event) => {
       text,
       replyTo,
       tenantName: identity.tenantName ?? undefined,
+      unsubscribeUrl,
       enqueuedAt: new Date().toISOString(),
     },
     { jobId: send.id },

@@ -9,6 +9,7 @@ type SuppressionReason
     | 'complaint'
     | 'invalid'
     | 'manual'
+    | 'unsubscribed'
 
 const CACHE_PREFIX = 'suppression:email:'
 const CACHE_TTL_SECONDS = 3600 // 1h

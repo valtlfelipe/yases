@@ -37,6 +37,7 @@ const statusMap: Record<string, { bg: string, text: string }> = {
   transient_bounce: { bg: 'bg-amber-500', text: 'text-amber-700 dark:text-amber-400' },
   invalid: { bg: 'bg-red-500', text: 'text-red-700 dark:text-red-400' },
   manual: { bg: 'bg-stone-400', text: 'text-stone-600 dark:text-stone-400' },
+  unsubscribed: { bg: 'bg-violet-500', text: 'text-violet-700 dark:text-violet-400' },
 }
 
 const labelMap: Record<string, string> = {
@@ -45,6 +46,7 @@ const labelMap: Record<string, string> = {
   complaint: 'Complaint',
   invalid: 'Invalid',
   manual: 'Manual',
+  unsubscribed: 'Unsubscribed',
   temporarily_failed: 'Temporarily failed',
 }
 

@@ -52,6 +52,9 @@ AWS_SECRET_ACCESS_KEY=xxxxxxxxxx
 # Auth
 BETTER_AUTH_SECRET=your-32-character-secret-key-here
 BETTER_AUTH_URL=https://your-domain.com
+
+# Token signing (unsubscribe links, etc.)
+TOKEN_SECRET=your-32-character-token-secret-here
 ```
 
 ### 2. Start the Services
@@ -131,8 +134,14 @@ Send an email via the REST API.
 | `html` | string | Yes* | HTML email body (*required if `text` is not provided) |
 | `text` | string | Yes* | Plain text email body (*required if `html` is not provided) |
 | `replyTo` | string | No | Reply-to address |
+| `type` | string | No | Email type: `"transactional"` (default) or `"marketing"` |
 
-**Example Request:**
+**Transactional vs Marketing emails:**
+
+- `transactional` — password resets, receipts, notifications. Bypasses unsubscribe suppression; other suppression reasons (bounces, complaints) still block sending.
+- `marketing` — newsletters, promotions. Respects all suppressions including unsubscribes. **Requires a `{{unsubscribeUrl}}` placeholder** in the `html` or `text` body — the server replaces it with a signed, one-click unsubscribe link before sending.
+
+**Example — transactional:**
 
 ```bash
 curl -X POST https://your-domain.com/api/emails/send \
@@ -141,10 +150,25 @@ curl -X POST https://your-domain.com/api/emails/send \
   -d '{
     "to": "recipient@example.com",
     "from": "Sender <noreply@yourdomain.com>",
-    "subject": "Hello from YASES",
-    "html": "<h1>Hello!</h1><p>This is a test email.</p>",
-    "text": "Hello! This is a test email.",
-    "replyTo": "support@yourdomain.com"
+    "subject": "Your receipt",
+    "html": "<p>Thanks for your purchase!</p>",
+    "text": "Thanks for your purchase!"
+  }'
+```
+
+**Example — marketing:**
+
+```bash
+curl -X POST https://your-domain.com/api/emails/send \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: your-api-key-here" \
+  -d '{
+    "to": "recipient@example.com",
+    "from": "Sender <noreply@yourdomain.com>",
+    "subject": "This month'\''s newsletter",
+    "type": "marketing",
+    "html": "<p>Hello!</p><p><a href=\"{{unsubscribeUrl}}\">Unsubscribe</a></p>",
+    "text": "Hello!\n\nUnsubscribe: {{unsubscribeUrl}}"
   }'
 ```
 
@@ -157,14 +181,24 @@ curl -X POST https://your-domain.com/api/emails/send \
 }
 ```
 
+When the recipient is suppressed, the email is recorded but not sent:
+
+```json
+{
+  "id": "cmq123abc456",
+  "status": "suppressed",
+  "reason": "unsubscribed"
+}
+```
+
 **Error Responses:**
 
 | Status | Error | Description |
 |--------|-------|-------------|
 | 400 | `Validation failed` | Invalid request body |
 | 400 | `UNVERIFIED_IDENTITY` | Sender domain is not verified in SES |
-| 400 | `INVALID_EMAIL` | Recipient email is invalid |
-| 400 | `SUPPRESSED` | Recipient is on the suppression list |
+| 400 | `INVALID_EMAIL` | Recipient email is invalid or disposable |
+| 400 | `MISSING_UNSUBSCRIBE_URL` | Marketing email is missing the `{{unsubscribeUrl}}` placeholder |
 | 401 | `Invalid API key` | Missing or invalid API key |
 
 ---

@@ -13,6 +13,7 @@ interface SendEmailParams {
   text?: string
   replyTo?: string
   tenantName?: string
+  unsubscribeUrl?: string
 }
 
 export class SESService {
@@ -27,6 +28,12 @@ export class SESService {
             ...(params.html && { Html: { Data: params.html, Charset: 'UTF-8' } }),
             ...(params.text && { Text: { Data: params.text, Charset: 'UTF-8' } }),
           },
+          ...(params.unsubscribeUrl && {
+            Headers: [
+              { Name: 'List-Unsubscribe', Value: `<${params.unsubscribeUrl}>` },
+              { Name: 'List-Unsubscribe-Post', Value: 'List-Unsubscribe=One-Click' },
+            ],
+          }),
         },
       },
       ...(params.replyTo && { ReplyToAddresses: [params.replyTo] }),
