@@ -16,7 +16,9 @@
 const props = defineProps<{ type: string }>()
 
 const eventMap: Record<string, { bg: string, text: string, icon: string }> = {
-  submitted: { bg: 'bg-stone-100 dark:bg-stone-800', text: 'text-stone-600 dark:text-stone-400', icon: 'i-heroicons-paper-airplane' },
+  queued: { bg: 'bg-amber-50 dark:bg-amber-900/30', text: 'text-amber-700 dark:text-amber-400', icon: 'i-heroicons-queue-list' },
+  suppressed: { bg: 'bg-orange-50 dark:bg-orange-900/30', text: 'text-orange-700 dark:text-orange-400', icon: 'i-heroicons-no-symbol' },
+  submitted: { bg: 'bg-blue-50 dark:bg-blue-900/30', text: 'text-blue-600 dark:text-blue-400', icon: 'i-heroicons-paper-airplane' },
   send: { bg: 'bg-blue-50 dark:bg-blue-900/30', text: 'text-blue-700 dark:text-blue-400', icon: 'i-heroicons-arrow-up-tray' },
   delivery: { bg: 'bg-emerald-50 dark:bg-emerald-900/30', text: 'text-emerald-700 dark:text-emerald-400', icon: 'i-heroicons-check-circle' },
   bounce: { bg: 'bg-red-50 dark:bg-red-900/30', text: 'text-red-700 dark:text-red-400', icon: 'i-heroicons-arrow-uturn-left' },
