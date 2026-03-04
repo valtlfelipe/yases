@@ -1,7 +1,7 @@
 import { auth } from '../../../lib/auth'
 import { eq } from 'drizzle-orm'
 import { db } from '../../../db/index'
-import { emailSends, emailIdentities } from '../../../db/schema'
+import { emailSends, emailIdentities, emailEvents } from '../../../db/schema'
 import { EmailValidationService } from '../../../services/EmailValidationService'
 import { SuppressionService } from '../../../services/SuppressionService'
 import { emailQueue } from '../../../queue/index'
@@ -112,6 +112,11 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 500, statusMessage: 'Failed to create email send record' })
     }
 
+    await db.insert(emailEvents).values([
+      { emailSendId: send.id, eventType: 'queued', rawPayload: {}, occurredAt: send.createdAt },
+      { emailSendId: send.id, eventType: 'suppressed', rawPayload: { reason: suppression.reason }, metadata: { reason: suppression.reason }, occurredAt: send.updatedAt },
+    ])
+
     setResponseStatus(event, 202)
     return { id: send.id, status: 'suppressed', reason: suppression.reason }
   }
@@ -133,6 +138,13 @@ export default defineEventHandler(async (event) => {
   if (!send) {
     throw createError({ statusCode: 500, statusMessage: 'Failed to create email send record' })
   }
+
+  await db.insert(emailEvents).values({
+    emailSendId: send.id,
+    eventType: 'queued',
+    rawPayload: {},
+    occurredAt: send.createdAt,
+  })
 
   const job = await emailQueue.add(
     'send',

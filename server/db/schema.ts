@@ -88,8 +88,10 @@ export const emailStatusEnum = pgEnum('email_status', [
 ])
 
 export const emailEventTypeEnum = pgEnum('email_event_type', [
-  'submitted', // we handed the email to SES (worker)
-  'send', // SES confirmed it started transmitting (SNS)
+  'queued',     // email record created, waiting to be processed
+  'suppressed', // recipient is on suppression list, not sent
+  'submitted',  // we handed the email to SES (worker)
+  'send',       // SES confirmed it started transmitting (SNS)
   'delivery',
   'bounce',
   'complaint',
@@ -177,7 +179,7 @@ export const emailEvents = pgTable('email_events', {
   emailSendId: uuid('email_send_id')
     .notNull()
     .references(() => emailSends.id, { onDelete: 'cascade' }),
-  sesMessageId: text('ses_message_id').notNull(),
+  sesMessageId: text('ses_message_id'),
   eventType: emailEventTypeEnum('event_type').notNull(),
   rawPayload: jsonb('raw_payload').notNull(),
   metadata: jsonb('metadata'),

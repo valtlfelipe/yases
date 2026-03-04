@@ -50,14 +50,11 @@ export default defineEventHandler(async (event) => {
 
   const send = rows[0]!
 
-  const timeline = [
-    { event: 'queued', occurredAt: send.createdAt, metadata: null },
-    ...events.map(e => ({
-      event: e.eventType,
-      occurredAt: e.occurredAt,
-      metadata: e.metadata ?? null,
-    })),
-  ]
+  const timeline = events.map(e => ({
+    event: e.eventType,
+    occurredAt: e.occurredAt,
+    metadata: e.metadata ?? null,
+  }))
 
   return { ...send, timeline }
 })

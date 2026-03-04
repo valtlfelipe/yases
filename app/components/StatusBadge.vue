@@ -12,21 +12,31 @@
 const props = defineProps<{ status: string }>()
 
 const statusMap: Record<string, { bg: string, text: string }> = {
-  sent: { bg: 'bg-emerald-500', text: 'text-emerald-700 dark:text-emerald-400' },
-  delivered: { bg: 'bg-emerald-500', text: 'text-emerald-700 dark:text-emerald-400' },
-  opened: { bg: 'bg-violet-500', text: 'text-violet-700 dark:text-violet-400' },
-  clicked: { bg: 'bg-cyan-500', text: 'text-cyan-700 dark:text-cyan-400' },
-  failed: { bg: 'bg-red-600', text: 'text-red-700 dark:text-red-400' },
-  bounced: { bg: 'bg-red-500', text: 'text-red-700 dark:text-red-400' },
-  suppressed: { bg: 'bg-red-500', text: 'text-red-700 dark:text-red-400' },
-  complained: { bg: 'bg-red-500', text: 'text-red-700 dark:text-red-400' },
+  // email send statuses
   queued: { bg: 'bg-amber-500', text: 'text-amber-700 dark:text-amber-400' },
   sending: { bg: 'bg-blue-500', text: 'text-blue-700 dark:text-blue-400' },
+  sent: { bg: 'bg-emerald-500', text: 'text-emerald-700 dark:text-emerald-400' },
+  failed: { bg: 'bg-red-500', text: 'text-red-700 dark:text-red-400' },
+  suppressed: { bg: 'bg-orange-500', text: 'text-orange-700 dark:text-orange-400' },
+  bounced: { bg: 'bg-red-500', text: 'text-red-700 dark:text-red-400' },
+  // email event types
+  submitted: { bg: 'bg-blue-400', text: 'text-blue-600 dark:text-blue-400' },
+  send: { bg: 'bg-blue-500', text: 'text-blue-700 dark:text-blue-400' },
+  delivery: { bg: 'bg-emerald-500', text: 'text-emerald-700 dark:text-emerald-400' },
+  bounce: { bg: 'bg-red-500', text: 'text-red-700 dark:text-red-400' },
+  complaint: { bg: 'bg-orange-500', text: 'text-orange-700 dark:text-orange-400' },
+  reject: { bg: 'bg-red-500', text: 'text-red-700 dark:text-red-400' },
+  open: { bg: 'bg-violet-500', text: 'text-violet-700 dark:text-violet-400' },
+  click: { bg: 'bg-cyan-500', text: 'text-cyan-700 dark:text-cyan-400' },
+  // identity statuses
   pending: { bg: 'bg-amber-500', text: 'text-amber-700 dark:text-amber-400' },
-  temporarily_failed: { bg: 'bg-amber-500', text: 'text-amber-700 dark:text-amber-400' },
   verified: { bg: 'bg-emerald-500', text: 'text-emerald-700 dark:text-emerald-400' },
-  pending_verification: { bg: 'bg-amber-500', text: 'text-amber-700 dark:text-amber-400' },
-  failed_verification: { bg: 'bg-red-500', text: 'text-red-700 dark:text-red-400' },
+  temporarily_failed: { bg: 'bg-amber-500', text: 'text-amber-700 dark:text-amber-400' },
+  // suppression reasons
+  permanent_bounce: { bg: 'bg-red-500', text: 'text-red-700 dark:text-red-400' },
+  transient_bounce: { bg: 'bg-amber-500', text: 'text-amber-700 dark:text-amber-400' },
+  invalid: { bg: 'bg-red-500', text: 'text-red-700 dark:text-red-400' },
+  manual: { bg: 'bg-stone-400', text: 'text-stone-600 dark:text-stone-400' },
 }
 
 const defaultStatus = { bg: 'bg-stone-400', text: 'text-stone-600 dark:text-stone-400' }
