@@ -4,7 +4,7 @@
       class="w-1.5 h-1.5 rounded-full"
       :class="dotColor"
     />
-    <span :class="textColor">{{ status }}</span>
+    <span :class="textColor">{{ label }}</span>
   </span>
 </template>
 
@@ -39,8 +39,18 @@ const statusMap: Record<string, { bg: string, text: string }> = {
   manual: { bg: 'bg-stone-400', text: 'text-stone-600 dark:text-stone-400' },
 }
 
+const labelMap: Record<string, string> = {
+  permanent_bounce: 'Permanent bounce',
+  transient_bounce: 'Transient bounce',
+  complaint: 'Complaint',
+  invalid: 'Invalid',
+  manual: 'Manual',
+  temporarily_failed: 'Temporarily failed',
+}
+
 const defaultStatus = { bg: 'bg-stone-400', text: 'text-stone-600 dark:text-stone-400' }
 
 const dotColor = computed(() => statusMap[props.status]?.bg ?? defaultStatus.bg)
 const textColor = computed(() => statusMap[props.status]?.text ?? defaultStatus.text)
+const label = computed(() => labelMap[props.status] ?? props.status.charAt(0).toUpperCase() + props.status.slice(1))
 </script>

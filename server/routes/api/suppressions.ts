@@ -45,8 +45,9 @@ export default defineEventHandler(async (event) => {
     const page = Number(query.page) || 1
     const limit = Math.min(Number(query.limit) || 20, 100)
     const reason = query.reason as SuppressionReason | undefined
+    const email = query.email as string | undefined
 
-    const result = await suppressionService.list(page, limit, reason)
+    const result = await suppressionService.list(page, limit, reason, email)
     return { items: result.items, total: result.total, page, limit }
   }
 

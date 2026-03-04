@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm'
+import { and, eq, ilike } from 'drizzle-orm'
 import { db } from '../db/index'
 import { suppressionList } from '../db/schema'
 import { redis } from '../cache/redis'
@@ -75,15 +75,23 @@ export class SuppressionService {
     page: number,
     limit: number,
     reason?: SuppressionReason,
+    email?: string,
   ): Promise<{ items: typeof suppressionList.$inferSelect[], total: number }> {
     const offset = (page - 1) * limit
 
+    const conditions = [
+      reason ? eq(suppressionList.reason, reason) : undefined,
+      email ? ilike(suppressionList.email, `%${email}%`) : undefined,
+    ].filter(Boolean)
+
+    const where = conditions.length > 1 ? and(...conditions) : conditions[0]
+
     const [items, countRows] = await Promise.all([
-      reason
-        ? db.select().from(suppressionList).where(eq(suppressionList.reason, reason)).limit(limit).offset(offset)
+      where
+        ? db.select().from(suppressionList).where(where).limit(limit).offset(offset)
         : db.select().from(suppressionList).limit(limit).offset(offset),
-      reason
-        ? db.select({ id: suppressionList.id }).from(suppressionList).where(eq(suppressionList.reason, reason))
+      where
+        ? db.select({ id: suppressionList.id }).from(suppressionList).where(where)
         : db.select({ id: suppressionList.id }).from(suppressionList),
     ])
 
