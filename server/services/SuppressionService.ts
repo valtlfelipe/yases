@@ -1,4 +1,4 @@
-import { and, eq, ilike } from 'drizzle-orm'
+import { and, desc, eq, ilike } from 'drizzle-orm'
 import { db } from '../db/index'
 import { suppressionList } from '../db/schema'
 import { redis } from '../cache/redis'
@@ -88,8 +88,8 @@ export class SuppressionService {
 
     const [items, countRows] = await Promise.all([
       where
-        ? db.select().from(suppressionList).where(where).limit(limit).offset(offset)
-        : db.select().from(suppressionList).limit(limit).offset(offset),
+        ? db.select().from(suppressionList).where(where).orderBy(desc(suppressionList.createdAt)).limit(limit).offset(offset)
+        : db.select().from(suppressionList).orderBy(desc(suppressionList.createdAt)).limit(limit).offset(offset),
       where
         ? db.select({ id: suppressionList.id }).from(suppressionList).where(where)
         : db.select({ id: suppressionList.id }).from(suppressionList),
