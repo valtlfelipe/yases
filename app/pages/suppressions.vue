@@ -9,10 +9,15 @@
           Manage email addresses that should not receive messages.
         </p>
       </div>
-      <span
-        v-if="suppressions"
-        class="text-sm text-stone-500 dark:text-stone-400"
-      >{{ formatNumber(suppressions.total) }} total</span>
+      <div class="flex items-center gap-3">
+        <UButton @click="openAddModal">
+          <UIcon
+            name="i-heroicons-plus"
+            class="w-4 h-4 mr-1.5"
+          />
+          Add Suppression
+        </UButton>
+      </div>
     </div>
 
     <div class="card-elevated">
@@ -104,6 +109,7 @@
                   <th class="px-4 py-3 text-left text-xs font-medium text-stone-500 dark:text-stone-400 uppercase tracking-wider">
                     Added
                   </th>
+                  <th class="px-4 py-3" />
                 </tr>
               </thead>
               <tbody class="divide-y divide-stone-200 dark:divide-stone-800">
@@ -123,6 +129,15 @@
                   </td>
                   <td class="px-4 py-3">
                     <span class="text-sm text-stone-500">{{ formatDate(item.createdAt) }}</span>
+                  </td>
+                  <td class="px-4 py-3 text-right">
+                    <UButton
+                      variant="ghost"
+                      color="error"
+                      size="xs"
+                      icon="i-heroicons-trash"
+                      @click="confirmRemove(item.email)"
+                    />
                   </td>
                 </tr>
               </tbody>
@@ -163,12 +178,108 @@
         </template>
       </div>
     </div>
+
+    <!-- Add suppression modal -->
+    <UModal v-model:open="showAddModal">
+      <template #content>
+        <div class="p-6 space-y-5">
+          <div>
+            <h3 class="text-lg font-semibold text-stone-900 dark:text-stone-100">
+              Add Suppression
+            </h3>
+            <p class="text-sm text-stone-500 dark:text-stone-400 mt-1">
+              Emails sent to this address will be blocked.
+            </p>
+          </div>
+
+          <UFormField label="Email address">
+            <UInput
+              v-model="formEmail"
+              placeholder="user@example.com"
+              type="email"
+              class="w-full"
+              autofocus
+              @keydown.enter="addSuppression"
+            />
+          </UFormField>
+
+          <UFormField label="Reason">
+            <USelect
+              v-model="formReason"
+              :items="reasonAddItems"
+              color="neutral"
+              class="w-full"
+            />
+          </UFormField>
+
+          <UFormField
+            label="Detail"
+            :help="'Optional note explaining why this address is suppressed.'"
+          >
+            <UInput
+              v-model="formDetail"
+              placeholder="e.g. User requested opt-out"
+              class="w-full"
+            />
+          </UFormField>
+
+          <UAlert
+            v-if="addError"
+            icon="i-heroicons-exclamation-triangle"
+            color="error"
+            variant="soft"
+            :title="addError"
+          />
+
+          <div class="flex justify-end gap-3 pt-2">
+            <UButton
+              variant="ghost"
+              color="neutral"
+              @click="showAddModal = false"
+            >
+              Cancel
+            </UButton>
+            <UButton
+              :loading="adding"
+              @click="addSuppression"
+            >
+              Add Suppression
+            </UButton>
+          </div>
+        </div>
+      </template>
+    </UModal>
+
+    <!-- Remove confirmation modal -->
+    <UModal v-model:open="showRemoveModal">
+      <template #content>
+        <div class="p-6 space-y-5">
+          <div>
+            <h3 class="text-lg font-semibold text-stone-900 dark:text-stone-100">
+              Remove Suppression
+            </h3>
+            <p class="text-sm text-stone-500 dark:text-stone-400 mt-1">
+              Are you sure you want to remove <strong class="text-stone-700 dark:text-stone-300">{{ emailToRemove }}</strong> from the suppression list? They will be able to receive emails again.
+            </p>
+          </div>
+          <div class="flex justify-end gap-3 pt-2">
+            <UButton variant="soft" color="neutral" @click="showRemoveModal = false">
+              Cancel
+            </UButton>
+            <UButton color="error" :loading="removing" @click="remove">
+              Remove
+            </UButton>
+          </div>
+        </div>
+      </template>
+    </UModal>
   </div>
 </template>
 
 <script setup lang="ts">
 import type { SuppressionFilters } from '~/composables/useSuppressions'
 
+const toast = useToast()
 const page = ref(1)
 const limit = 20
 
@@ -193,10 +304,9 @@ watch(selectedReason, (v) => {
 })
 
 const filtersRef = computed(() => ({ ...filters }))
-const { suppressions, pending, error } = useSuppressions(page, limit, filtersRef)
+const { suppressions, pending, error, refresh } = useSuppressions(page, limit, filtersRef)
 
 const totalPages = computed(() => Math.ceil((suppressions.value?.total ?? 0) / limit))
-
 const hasActiveFilters = computed(() => !!(emailInput.value || selectedReason.value !== '_all'))
 
 const reasonSelectItems = [
@@ -207,6 +317,92 @@ const reasonSelectItems = [
   { label: 'Invalid', value: 'invalid' },
   { label: 'Manual', value: 'manual' },
 ]
+
+const reasonAddItems = [
+  { label: 'Manual', value: 'manual' },
+  { label: 'Complaint', value: 'complaint' },
+  { label: 'Invalid', value: 'invalid' },
+  { label: 'Permanent bounce', value: 'permanent_bounce' },
+  { label: 'Transient bounce', value: 'transient_bounce' },
+]
+
+// Add
+const showAddModal = ref(false)
+const formEmail = ref('')
+const formReason = ref('manual')
+const formDetail = ref('')
+const adding = ref(false)
+const addError = ref<string | null>(null)
+
+function openAddModal() {
+  formEmail.value = ''
+  formReason.value = 'manual'
+  formDetail.value = ''
+  addError.value = null
+  showAddModal.value = true
+}
+
+async function addSuppression() {
+  const email = formEmail.value.trim()
+  if (!email) {
+    addError.value = 'Please enter an email address.'
+    return
+  }
+
+  adding.value = true
+  addError.value = null
+  try {
+    await $fetch('/api/suppressions', {
+      method: 'POST',
+      credentials: 'include',
+      body: {
+        email,
+        reason: formReason.value,
+        detail: formDetail.value.trim() || undefined,
+      },
+    })
+    showAddModal.value = false
+    refresh()
+    toast.add({ title: 'Suppression added', description: `${email} has been added to the suppression list.`, color: 'success' })
+  }
+  catch (e: unknown) {
+    const msg = (e as { data?: { error?: string }, message?: string })?.data?.error ?? (e as { message?: string })?.message ?? 'Failed to add suppression'
+    addError.value = msg
+  }
+  finally {
+    adding.value = false
+  }
+}
+
+// Remove
+const showRemoveModal = ref(false)
+const emailToRemove = ref('')
+const removing = ref(false)
+
+function confirmRemove(email: string) {
+  emailToRemove.value = email
+  showRemoveModal.value = true
+}
+
+async function remove() {
+  removing.value = true
+  try {
+    await $fetch('/api/suppressions', {
+      method: 'DELETE',
+      credentials: 'include',
+      body: { email: emailToRemove.value },
+    })
+    showRemoveModal.value = false
+    refresh()
+    toast.add({ title: 'Suppression removed', description: `${emailToRemove.value} can now receive emails.`, color: 'success' })
+  }
+  catch {
+    toast.add({ title: 'Removal failed', description: 'Could not remove the suppression. Please try again.', color: 'error' })
+  }
+  finally {
+    removing.value = false
+  }
+}
 
 function clearFilters() {
   emailInput.value = ''
@@ -221,11 +417,5 @@ function formatDate(dateStr: string) {
     hour: 'numeric',
     minute: '2-digit',
   })
-}
-
-function formatNumber(num: number): string {
-  if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M'
-  if (num >= 1000) return (num / 1000).toFixed(1) + 'K'
-  return num.toString()
 }
 </script>

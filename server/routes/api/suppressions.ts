@@ -72,8 +72,15 @@ export default defineEventHandler(async (event) => {
     return { success: true, email: email.toLowerCase(), reason }
   }
 
-  if (method === 'DELETE' && emailParam) {
-    const email = decodeURIComponent(emailParam)
+  if (method === 'DELETE') {
+    const email = emailParam
+      ? decodeURIComponent(emailParam)
+      : (await readBody(event))?.email as string | undefined
+
+    if (!email) {
+      throw createError({ statusCode: 400, statusMessage: 'Email is required' })
+    }
+
     const removed = await suppressionService.remove(email)
 
     if (!removed) {
