@@ -42,14 +42,18 @@ export default defineEventHandler(async (event) => {
 
     db.execute(sql`
       SELECT
-        to_char(date_trunc('day', created_at), 'YYYY-MM-DD') AS date,
-        COUNT(*) AS total,
-        COUNT(*) FILTER (WHERE status = 'sent') AS sent,
-        COUNT(*) FILTER (WHERE status = 'failed') AS failed
-      FROM email_sends
-      WHERE created_at >= NOW() - INTERVAL '7 days'
-      GROUP BY date_trunc('day', created_at)
-      ORDER BY date_trunc('day', created_at)
+        to_char(date_trunc('day', es.created_at), 'YYYY-MM-DD') AS date,
+        COUNT(DISTINCT es.id) AS total,
+        COUNT(DISTINCT es.id) AS sent,
+        COUNT(DISTINCT CASE WHEN ee.event_type = 'delivery' THEN es.id END) AS delivered,
+        COUNT(DISTINCT CASE WHEN ee.event_type = 'bounce' THEN es.id END) AS bounced,
+        COUNT(DISTINCT CASE WHEN ee.event_type = 'open' THEN es.id END) AS opened,
+        COUNT(DISTINCT es.id) FILTER (WHERE es.status = 'failed') AS failed
+      FROM email_sends es
+      LEFT JOIN email_events ee ON ee.email_send_id = es.id
+      WHERE es.created_at >= NOW() - INTERVAL '7 days'
+      GROUP BY date_trunc('day', es.created_at)
+      ORDER BY date_trunc('day', es.created_at)
     `),
   ])
 
@@ -65,6 +69,7 @@ export default defineEventHandler(async (event) => {
     sent: sendsByStatus['sent'] ?? 0,
     failed: sendsByStatus['failed'] ?? 0,
     suppressed: sendsByStatus['suppressed'] ?? 0,
+    bounced: sendsByStatus['bounced'] ?? 0,
   }
 
   const eventsByType: Record<string, number> = {}
@@ -80,7 +85,7 @@ export default defineEventHandler(async (event) => {
     clicked: eventsByType['click'] ?? 0,
   }
 
-  const totalAttempted = sends.sent + sends.failed
+  const totalAttempted = sends.sent + sends.failed + sends.bounced
   const rates = {
     delivery: totalAttempted > 0 ? Math.round((events.delivered / totalAttempted) * 1000) / 10 : 0,
     bounce: totalAttempted > 0 ? Math.round((events.bounced / totalAttempted) * 1000) / 10 : 0,
@@ -92,11 +97,14 @@ export default defineEventHandler(async (event) => {
   const suppressions = suppressionsRow[0]?.total ?? 0
 
   const trend = (
-    trendRows.rows as Array<{ date: string, total: string, sent: string, failed: string }>
+    trendRows.rows as Array<{ date: string, total: string, sent: string, delivered: string, bounced: string, opened: string, failed: string }>
   ).map(r => ({
     date: r.date,
     total: parseInt(r.total, 10),
     sent: parseInt(r.sent, 10),
+    delivered: parseInt(r.delivered, 10),
+    bounced: parseInt(r.bounced, 10),
+    opened: parseInt(r.opened, 10),
     failed: parseInt(r.failed, 10),
   }))
 

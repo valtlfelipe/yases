@@ -9,6 +9,15 @@
           Track your email performance and engagement.
         </p>
       </div>
+      <UButton
+        variant="outline"
+        color="neutral"
+        icon="i-heroicons-arrow-path"
+        :loading="pending"
+        @click="refreshAll"
+      >
+        Refresh
+      </UButton>
     </div>
 
     <div
@@ -48,10 +57,10 @@
             </div>
           </div>
           <p class="text-2xl font-semibold text-stone-900 dark:text-stone-100">
-            {{ formatNumber(stats.sends.sent) }}
+            {{ formatNumber(totalAttempted) }}
           </p>
           <p class="mt-1 text-xs text-stone-400 dark:text-stone-500">
-            emails sent
+            emails attempted
           </p>
         </div>
 
@@ -182,10 +191,10 @@
         <div class="flex items-center justify-between mb-6">
           <div>
             <h3 class="text-lg font-display text-stone-900 dark:text-stone-100">
-              7-day send trend
+              7-day activity
             </h3>
             <p class="text-sm text-stone-500 dark:text-stone-400 mt-0.5">
-              Email volume over the last week
+              Sent, delivered, opened, and bounced per day
             </p>
           </div>
         </div>
@@ -310,13 +319,23 @@
 </template>
 
 <script setup lang="ts">
-const { stats, pending, error } = useStats()
+const { stats, pending, error, refresh } = useStats()
 
-const { data: eventsData, pending: eventsPending } = useFetch('/api/events', {
+const totalAttempted = computed(() =>
+  (stats.value?.sends.sent ?? 0) +
+  (stats.value?.sends.bounced ?? 0) +
+  (stats.value?.sends.failed ?? 0),
+)
+
+const { data: eventsData, pending: eventsPending, refresh: refreshEvents } = useFetch('/api/events', {
   credentials: 'include',
   query: { limit: 10 },
   key: 'recent-events',
 })
+
+async function refreshAll() {
+  await Promise.all([refresh(), refreshEvents()])
+}
 
 const recentEvents = computed(() => eventsData.value ?? [])
 
