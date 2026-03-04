@@ -91,12 +91,30 @@ export default defineEventHandler(async (event) => {
   }
 
   const suppression = await suppressionService.isSuppressed(toEmail)
-  if (suppression) {
-    setResponseStatus(event, 400)
-    return { error: 'SUPPRESSED', reason: suppression.reason }
-  }
-
   const fromDomain = extractEmail(from).split('@')[1] ?? null
+
+  if (suppression) {
+    const [send] = await db
+      .insert(emailSends)
+      .values({
+        to,
+        from,
+        fromDomain,
+        subject,
+        htmlBody: html ?? null,
+        textBody: text ?? null,
+        replyTo: replyTo ?? null,
+        status: 'suppressed',
+      })
+      .returning()
+
+    if (!send) {
+      throw createError({ statusCode: 500, statusMessage: 'Failed to create email send record' })
+    }
+
+    setResponseStatus(event, 202)
+    return { id: send.id, status: 'suppressed', reason: suppression.reason }
+  }
 
   const [send] = await db
     .insert(emailSends)

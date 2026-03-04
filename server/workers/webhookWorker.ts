@@ -51,6 +51,8 @@ async function handleBounce(
 
   const recipients = (bounce['bouncedRecipients'] as Array<{ emailAddress?: string, diagnosticCode?: string }>) ?? []
 
+  await db.update(emailSends).set({ status: 'bounced' }).where(eq(emailSends.id, sendRow.id))
+
   await Promise.all(
     recipients.map(async (r) => {
       if (!r.emailAddress) return
