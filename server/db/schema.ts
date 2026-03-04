@@ -99,6 +99,7 @@ export const emailEventTypeEnum = pgEnum('email_event_type', [
   'reject',
   'open',
   'click',
+  'unsubscribe',
 ])
 
 export const suppressionList = pgTable('suppression_list', {

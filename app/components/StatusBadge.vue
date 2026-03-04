@@ -28,6 +28,7 @@ const statusMap: Record<string, { bg: string, text: string }> = {
   reject: { bg: 'bg-red-500', text: 'text-red-700 dark:text-red-400' },
   open: { bg: 'bg-violet-500', text: 'text-violet-700 dark:text-violet-400' },
   click: { bg: 'bg-cyan-500', text: 'text-cyan-700 dark:text-cyan-400' },
+  unsubscribe: { bg: 'bg-violet-500', text: 'text-violet-700 dark:text-violet-400' },
   // identity statuses
   pending: { bg: 'bg-amber-500', text: 'text-amber-700 dark:text-amber-400' },
   verified: { bg: 'bg-emerald-500', text: 'text-emerald-700 dark:text-emerald-400' },
@@ -47,6 +48,7 @@ const labelMap: Record<string, string> = {
   invalid: 'Invalid',
   manual: 'Manual',
   unsubscribed: 'Unsubscribed',
+  unsubscribe: 'Unsubscribed',
   temporarily_failed: 'Temporarily failed',
 }
 

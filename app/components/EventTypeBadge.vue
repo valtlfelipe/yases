@@ -26,6 +26,7 @@ const eventMap: Record<string, { bg: string, text: string, icon: string }> = {
   reject: { bg: 'bg-red-50 dark:bg-red-900/30', text: 'text-red-700 dark:text-red-400', icon: 'i-heroicons-x-circle' },
   open: { bg: 'bg-violet-50 dark:bg-violet-900/30', text: 'text-violet-700 dark:text-violet-400', icon: 'i-heroicons-envelope-open' },
   click: { bg: 'bg-cyan-50 dark:bg-cyan-900/30', text: 'text-cyan-700 dark:text-cyan-400', icon: 'i-heroicons-cursor-arrow-rays' },
+  unsubscribe: { bg: 'bg-violet-50 dark:bg-violet-900/30', text: 'text-violet-700 dark:text-violet-400', icon: 'i-heroicons-hand-raised' },
 }
 
 const defaultStyle = { bg: 'bg-stone-100 dark:bg-stone-800', text: 'text-stone-600 dark:text-stone-400', icon: 'i-heroicons-bolt' }

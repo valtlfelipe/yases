@@ -85,6 +85,13 @@
       "when": 1772647727985,
       "tag": "0012_bright_overlord",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1772651854837,
+      "tag": "0013_violet_doorman",
+      "breakpoints": true
     }
   ]
 }

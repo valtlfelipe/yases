@@ -55,6 +55,7 @@ function dotColor(event: string) {
     reject: 'bg-red-500',
     open: 'bg-violet-500',
     click: 'bg-cyan-500',
+    unsubscribe: 'bg-violet-500',
     suppressed: 'bg-orange-500',
     failed: 'bg-red-500',
     bounced: 'bg-red-500',

@@ -85,11 +85,6 @@ export default defineEventHandler(async (event) => {
         detail: 'Marketing emails must include {{unsubscribeUrl}} placeholder in html or text body',
       }
     }
-
-    const token = signUnsubscribeToken(toEmail, env.TOKEN_SECRET)
-    unsubscribeUrl = `${env.BETTER_AUTH_URL}/unsubscribe?token=${token}`
-    html = html?.replaceAll('{{unsubscribeUrl}}', unsubscribeUrl)
-    text = text?.replaceAll('{{unsubscribeUrl}}', unsubscribeUrl)
   }
 
   const identity = await getIdentity(fromEmail)
@@ -161,6 +156,15 @@ export default defineEventHandler(async (event) => {
 
   if (!send) {
     throw createError({ statusCode: 500, statusMessage: 'Failed to create email send record' })
+  }
+
+  // Now that we have send.id, regenerate the unsubscribe URL with it embedded in the token
+  if (type === 'marketing') {
+    const token = signUnsubscribeToken(toEmail, env.TOKEN_SECRET, send.id)
+    unsubscribeUrl = `${env.BETTER_AUTH_URL}/unsubscribe?token=${token}`
+    html = html?.replaceAll('{{unsubscribeUrl}}', unsubscribeUrl)
+    text = text?.replaceAll('{{unsubscribeUrl}}', unsubscribeUrl)
+    await db.update(emailSends).set({ htmlBody: html ?? null, textBody: text ?? null }).where(eq(emailSends.id, send.id))
   }
 
   await db.insert(emailEvents).values({
