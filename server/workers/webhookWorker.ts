@@ -108,14 +108,21 @@ async function handleOpen(
   notification: Record<string, unknown>,
   rawPayload: Record<string, unknown>,
 ): Promise<void> {
-  const sesMessageId = extractMessageId(notification)
   const open = notification['open'] as Record<string, unknown> | undefined
-  const sendRow = await requireSendByMessageId(sesMessageId)
+  const mail = notification['mail'] as Record<string, unknown> | undefined
+  const userAgent = open?.['userAgent'] as string | undefined
+  const ipAddress = open?.['ipAddress'] as string | undefined
+  const openedAt = open?.['timestamp'] as string | undefined
+  const sentAt = mail?.['timestamp'] as string | undefined
 
-  await insertEvent(sendRow.id, sesMessageId, 'open', rawPayload, {
-    ipAddress: open?.['ipAddress'],
-    userAgent: open?.['userAgent'],
-  })
+  if (isBotOpen(userAgent, ipAddress, openedAt, sentAt)) {
+    console.log(`[WebhookWorker] Skipping bot open — IP: ${ipAddress}, UA: ${userAgent}, delta: ${openedAt && sentAt ? `${new Date(openedAt).getTime() - new Date(sentAt).getTime()}ms` : 'unknown'}`)
+    return
+  }
+
+  const sesMessageId = extractMessageId(notification)
+  const sendRow = await requireSendByMessageId(sesMessageId)
+  await insertEvent(sendRow.id, sesMessageId, 'open', rawPayload, { ipAddress, userAgent })
 }
 
 async function handleClick(
@@ -131,6 +138,66 @@ async function handleClick(
     ipAddress: click?.['ipAddress'],
     userAgent: click?.['userAgent'],
   })
+}
+
+// ── bot detection ──────────────────────────────────────────────────────────
+
+const GOOGLE_IP_CIDRS: [number, number][] = [
+  [ip2int('66.249.0.0'), 16],
+  [ip2int('74.125.0.0'), 16],
+  [ip2int('66.102.0.0'), 20],
+  [ip2int('64.233.160.0'), 19],
+  [ip2int('72.14.192.0'), 18],
+  [ip2int('209.85.128.0'), 17],
+  [ip2int('216.239.32.0'), 19],
+]
+
+const BOT_UA_PATTERNS = [
+  'googleimageproxy',
+  'googlebot',
+  'apple mail privacy protection',
+  'yahoomailproxy',
+  'outlooksafelink',
+  'barracuda',
+  'claudebot',
+  'gptbot',
+]
+
+function ip2int(ip: string): number {
+  return ip.split('.').reduce((acc, octet) => (acc << 8) | parseInt(octet), 0) >>> 0
+}
+
+function isGoogleIp(ip: string): boolean {
+  try {
+    const ipInt = ip2int(ip)
+    return GOOGLE_IP_CIDRS.some(([network, prefix]) => {
+      const mask = prefix === 0 ? 0 : (~0 << (32 - prefix)) >>> 0
+      return (ipInt & mask) === (network & mask)
+    })
+  } catch {
+    return false
+  }
+}
+
+const BOT_OPEN_TIMING_THRESHOLD_MS = 5_000
+
+function isBotOpen(userAgent?: string, ipAddress?: string, openedAt?: string, sentAt?: string): boolean {
+  // Timing: sub-30s from send is virtually impossible for a human
+  if (openedAt && sentAt) {
+    const delta = new Date(openedAt).getTime() - new Date(sentAt).getTime()
+    if (delta >= 0 && delta < BOT_OPEN_TIMING_THRESHOLD_MS) return true
+  }
+
+  if (userAgent) {
+    const ua = userAgent.toLowerCase()
+    // Apple MPP: bare "Mozilla/5.0" with no platform info
+    if (userAgent.trim() === 'Mozilla/5.0') return true
+    if (BOT_UA_PATTERNS.some(p => ua.includes(p))) return true
+  }
+
+  if (ipAddress && isGoogleIp(ipAddress)) return true
+
+  return false
 }
 
 // ── helpers ────────────────────────────────────────────────────────────────
