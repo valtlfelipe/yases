@@ -4,7 +4,7 @@
 
 A self-hosted email service built on AWS SES with a beautiful dashboard for managing identities, tracking deliveries, and handling bounces.
 
-<img width="1210" height="784" alt="Image" src="https://github.com/user-attachments/assets/97b241b0-9603-43c5-8541-4b094326330a" />
+<img width="1210" height="784" alt="Image" src="https://github.com/user-attachments/assets/e255c8f2-f2e7-4c8c-8bd9-d72039ff32ec" />
 
 </div>
 
