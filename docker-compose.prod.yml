@@ -32,9 +32,9 @@ services:
   migrate:
     build:
       context: .
-      dockerfile: Dockerfile.worker
+      dockerfile: Dockerfile
     command: bun run db:migrate
-    env_file: apps/server/.env
+    env_file: .env
     environment:
       DATABASE_URL: postgres://email:email@postgres:5432/email_service
     depends_on:
@@ -47,9 +47,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    command: bun src/index.ts
+    command: bun --bun run /app/server/index.mjs
     restart: unless-stopped
-    env_file: apps/server/.env
+    env_file: .env
     environment:
       DATABASE_URL: postgres://email:email@postgres:5432/email_service
       REDIS_URL: redis://valkey:6379
@@ -72,10 +72,10 @@ services:
   worker:
     build:
       context: .
-      dockerfile: Dockerfile.worker
-    command: bun src/worker.ts
+      dockerfile: Dockerfile
+    command: bun server/workers/index.ts
     restart: unless-stopped
-    env_file: apps/server/.env
+    env_file: .env
     environment:
       DATABASE_URL: postgres://email:email@postgres:5432/email_service
       REDIS_URL: redis://valkey:6379
