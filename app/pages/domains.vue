@@ -134,7 +134,7 @@
                           @click="viewDns(item.domain)"
                         >
                           <UIcon
-                            :name="viewingDnsDomain === item.domain ? 'i-heroicons-arrow-path' : 'i-heroicons-list-bullet'"
+                            :name="viewingDnsDomain === item.domain ? 'i-heroicons-arrow-path' : 'i-heroicons-globe-alt'"
                             class="w-4 h-4"
                             :class="{ 'animate-spin': viewingDnsDomain === item.domain }"
                           />
@@ -301,33 +301,60 @@
             <p class="text-xs font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400">
               DKIM — 3 CNAME records (all required)
             </p>
-            <div class="rounded-lg border border-stone-200 dark:border-stone-700 overflow-hidden text-xs font-mono">
+            <div class="rounded-lg border border-stone-200 dark:border-stone-700 overflow-hidden divide-y divide-stone-100 dark:divide-stone-800">
               <div
                 v-for="rec in dnsResult.dkim"
                 :key="rec.name"
-                class="flex items-start gap-2 px-3 py-2 border-b border-stone-100 dark:border-stone-800 last:border-0 hover:bg-stone-50 dark:hover:bg-stone-800/40"
+                class="p-3 hover:bg-stone-50 dark:hover:bg-stone-800/40 transition-colors"
               >
-                <div class="flex-1 min-w-0 space-y-0.5">
-                  <p class="text-stone-500 dark:text-stone-400 break-all">
-                    {{ rec.name }}
-                  </p>
-                  <p class="flex items-center gap-1.5">
-                    <span class="text-stone-400 dark:text-stone-500">{{ rec.type }}</span>
-                    <span class="text-stone-700 dark:text-stone-300 break-all">{{ rec.value }}</span>
-                  </p>
+                <div class="flex items-center justify-between gap-3">
+                  <div class="flex-1 min-w-0">
+                    <p class="text-[10px] font-medium text-stone-400 dark:text-stone-500 uppercase tracking-wide mb-1">
+                      Name
+                    </p>
+                    <p class="text-xs font-mono text-stone-700 dark:text-stone-300 break-all">
+                      {{ rec.name }}
+                    </p>
+                  </div>
+                  <UButton
+                    size="xs"
+                    variant="soft"
+                    color="neutral"
+                    class="shrink-0"
+                    aria-label="Copy name"
+                    @click="copyText(rec.name, 'name')"
+                  >
+                    <UIcon
+                      :name="copiedField.name === rec.name ? 'i-heroicons-check' : 'i-heroicons-clipboard-document'"
+                      class="w-3.5 h-3.5 mr-1"
+                    />
+                    <span class="text-[10px]">{{ copiedField.name === rec.name ? 'Copied' : 'Copy' }}</span>
+                  </UButton>
                 </div>
-                <UButton
-                  size="xs"
-                  variant="ghost"
-                  color="neutral"
-                  class="shrink-0 mt-0.5"
-                  @click="copyText(rec.value)"
-                >
-                  <UIcon
-                    :name="copiedValue === rec.value ? 'i-heroicons-check' : 'i-heroicons-clipboard-document'"
-                    class="w-3.5 h-3.5"
-                  />
-                </UButton>
+                <div class="mt-2 flex items-center justify-between gap-3">
+                  <div class="flex-1 min-w-0">
+                    <p class="text-[10px] font-medium text-stone-400 dark:text-stone-500 uppercase tracking-wide mb-1">
+                      Content
+                    </p>
+                    <p class="text-xs font-mono text-stone-700 dark:text-stone-300 break-all">
+                      {{ rec.value }}
+                    </p>
+                  </div>
+                  <UButton
+                    size="xs"
+                    variant="soft"
+                    color="neutral"
+                    class="shrink-0"
+                    aria-label="Copy value"
+                    @click="copyText(rec.value, 'value')"
+                  >
+                    <UIcon
+                      :name="copiedField.value === rec.value ? 'i-heroicons-check' : 'i-heroicons-clipboard-document'"
+                      class="w-3.5 h-3.5 mr-1"
+                    />
+                    <span class="text-[10px]">{{ copiedField.value === rec.value ? 'Copied' : 'Copy' }}</span>
+                  </UButton>
+                </div>
               </div>
             </div>
           </div>
@@ -337,33 +364,60 @@
             <p class="text-xs font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400">
               MAIL FROM
             </p>
-            <div class="rounded-lg border border-stone-200 dark:border-stone-700 overflow-hidden text-xs font-mono">
+            <div class="rounded-lg border border-stone-200 dark:border-stone-700 overflow-hidden divide-y divide-stone-100 dark:divide-stone-800">
               <div
                 v-for="rec in dnsResult.mailFrom"
                 :key="rec.name + rec.type"
-                class="flex items-start gap-2 px-3 py-2 border-b border-stone-100 dark:border-stone-800 last:border-0 hover:bg-stone-50 dark:hover:bg-stone-800/40"
+                class="p-3 hover:bg-stone-50 dark:hover:bg-stone-800/40 transition-colors"
               >
-                <div class="flex-1 min-w-0 space-y-0.5">
-                  <p class="text-stone-500 dark:text-stone-400 break-all">
-                    {{ rec.name }}
-                  </p>
-                  <p class="flex items-center gap-1.5">
-                    <span class="text-stone-400 dark:text-stone-500">{{ rec.type }}</span>
-                    <span class="text-stone-700 dark:text-stone-300 break-all">{{ rec.value }}</span>
-                  </p>
+                <div class="flex items-center justify-between gap-3">
+                  <div class="flex-1 min-w-0">
+                    <p class="text-[10px] font-medium text-stone-400 dark:text-stone-500 uppercase tracking-wide mb-1">
+                      Name
+                    </p>
+                    <p class="text-xs font-mono text-stone-700 dark:text-stone-300 break-all">
+                      {{ rec.name }}
+                    </p>
+                  </div>
+                  <UButton
+                    size="xs"
+                    variant="soft"
+                    color="neutral"
+                    class="shrink-0"
+                    aria-label="Copy name"
+                    @click="copyText(rec.name, 'name')"
+                  >
+                    <UIcon
+                      :name="copiedField.name === rec.name ? 'i-heroicons-check' : 'i-heroicons-clipboard-document'"
+                      class="w-3.5 h-3.5 mr-1"
+                    />
+                    <span class="text-[10px]">{{ copiedField.name === rec.name ? 'Copied' : 'Copy' }}</span>
+                  </UButton>
                 </div>
-                <UButton
-                  size="xs"
-                  variant="ghost"
-                  color="neutral"
-                  class="shrink-0 mt-0.5"
-                  @click="copyText(rec.value)"
-                >
-                  <UIcon
-                    :name="copiedValue === rec.value ? 'i-heroicons-check' : 'i-heroicons-clipboard-document'"
-                    class="w-3.5 h-3.5"
-                  />
-                </UButton>
+                <div class="mt-2 flex items-center justify-between gap-3">
+                  <div class="flex-1 min-w-0">
+                    <p class="text-[10px] font-medium text-stone-400 dark:text-stone-500 uppercase tracking-wide mb-1">
+                      Content
+                    </p>
+                    <p class="text-xs font-mono text-stone-700 dark:text-stone-300 break-all">
+                      {{ rec.value }}
+                    </p>
+                  </div>
+                  <UButton
+                    size="xs"
+                    variant="soft"
+                    color="neutral"
+                    class="shrink-0"
+                    aria-label="Copy value"
+                    @click="copyText(rec.value, 'value')"
+                  >
+                    <UIcon
+                      :name="copiedField.value === rec.value ? 'i-heroicons-check' : 'i-heroicons-clipboard-document'"
+                      class="w-3.5 h-3.5 mr-1"
+                    />
+                    <span class="text-[10px]">{{ copiedField.value === rec.value ? 'Copied' : 'Copy' }}</span>
+                  </UButton>
+                </div>
               </div>
             </div>
           </div>
@@ -373,33 +427,60 @@
             <p class="text-xs font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400">
               DMARC (recommended)
             </p>
-            <div class="rounded-lg border border-stone-200 dark:border-stone-700 overflow-hidden text-xs font-mono">
+            <div class="rounded-lg border border-stone-200 dark:border-stone-700 overflow-hidden divide-y divide-stone-100 dark:divide-stone-800">
               <div
                 v-for="rec in dnsResult.dmarc"
                 :key="rec.name"
-                class="flex items-start gap-2 px-3 py-2 hover:bg-stone-50 dark:hover:bg-stone-800/40"
+                class="p-3 hover:bg-stone-50 dark:hover:bg-stone-800/40 transition-colors"
               >
-                <div class="flex-1 min-w-0 space-y-0.5">
-                  <p class="text-stone-500 dark:text-stone-400 break-all">
-                    {{ rec.name }}
-                  </p>
-                  <p class="flex items-center gap-1.5">
-                    <span class="text-stone-400 dark:text-stone-500">{{ rec.type }}</span>
-                    <span class="text-stone-700 dark:text-stone-300 break-all">{{ rec.value }}</span>
-                  </p>
+                <div class="flex items-center justify-between gap-3">
+                  <div class="flex-1 min-w-0">
+                    <p class="text-[10px] font-medium text-stone-400 dark:text-stone-500 uppercase tracking-wide mb-1">
+                      Name
+                    </p>
+                    <p class="text-xs font-mono text-stone-700 dark:text-stone-300 break-all">
+                      {{ rec.name }}
+                    </p>
+                  </div>
+                  <UButton
+                    size="xs"
+                    variant="soft"
+                    color="neutral"
+                    class="shrink-0"
+                    aria-label="Copy name"
+                    @click="copyText(rec.name, 'name')"
+                  >
+                    <UIcon
+                      :name="copiedField.name === rec.name ? 'i-heroicons-check' : 'i-heroicons-clipboard-document'"
+                      class="w-3.5 h-3.5 mr-1"
+                    />
+                    <span class="text-[10px]">{{ copiedField.name === rec.name ? 'Copied' : 'Copy' }}</span>
+                  </UButton>
                 </div>
-                <UButton
-                  size="xs"
-                  variant="ghost"
-                  color="neutral"
-                  class="shrink-0 mt-0.5"
-                  @click="copyText(rec.value)"
-                >
-                  <UIcon
-                    :name="copiedValue === rec.value ? 'i-heroicons-check' : 'i-heroicons-clipboard-document'"
-                    class="w-3.5 h-3.5"
-                  />
-                </UButton>
+                <div class="mt-2 flex items-center justify-between gap-3">
+                  <div class="flex-1 min-w-0">
+                    <p class="text-[10px] font-medium text-stone-400 dark:text-stone-500 uppercase tracking-wide mb-1">
+                      Content
+                    </p>
+                    <p class="text-xs font-mono text-stone-700 dark:text-stone-300 break-all">
+                      {{ rec.value }}
+                    </p>
+                  </div>
+                  <UButton
+                    size="xs"
+                    variant="soft"
+                    color="neutral"
+                    class="shrink-0"
+                    aria-label="Copy value"
+                    @click="copyText(rec.value, 'value')"
+                  >
+                    <UIcon
+                      :name="copiedField.value === rec.value ? 'i-heroicons-check' : 'i-heroicons-clipboard-document'"
+                      class="w-3.5 h-3.5 mr-1"
+                    />
+                    <span class="text-[10px]">{{ copiedField.value === rec.value ? 'Copied' : 'Copy' }}</span>
+                  </UButton>
+                </div>
               </div>
             </div>
           </div>
@@ -567,12 +648,15 @@ async function refreshDomain(domain: string) {
 }
 
 // --- Copy ---
-const copiedValue = ref<string | null>(null)
+const copiedField = reactive<{ name: string | null; value: string | null }>({
+  name: null,
+  value: null,
+})
 
-async function copyText(text: string) {
+async function copyText(text: string, field: 'name' | 'value') {
   await navigator.clipboard.writeText(text)
-  copiedValue.value = text
-  setTimeout(() => (copiedValue.value = null), 2000)
+  copiedField[field] = text
+  setTimeout(() => (copiedField[field] = null), 2000)
 }
 
 // --- Delete ---
