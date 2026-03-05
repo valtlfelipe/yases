@@ -9,15 +9,24 @@
           Track your email performance and engagement.
         </p>
       </div>
-      <UButton
-        variant="outline"
-        color="neutral"
-        icon="i-heroicons-arrow-path"
-        :loading="pending"
-        @click="refreshAll"
-      >
-        Refresh
-      </UButton>
+      <div class="flex items-center gap-3">
+        <label class="flex items-center gap-2 text-sm text-stone-600 dark:text-stone-400">
+          <span>Auto-refresh</span>
+          <USwitch
+            v-model="autoRefresh"
+            color="primary"
+          />
+        </label>
+        <UButton
+          variant="outline"
+          color="neutral"
+          icon="i-heroicons-arrow-path"
+          :loading="pending"
+          @click="refreshAll"
+        >
+          Refresh
+        </UButton>
+      </div>
     </div>
 
     <div
@@ -322,7 +331,23 @@
 </template>
 
 <script setup lang="ts">
+import { useIntervalFn, useLocalStorage } from '@vueuse/core'
+
 const { stats, pending, error, refresh } = useStats()
+
+const autoRefresh = useLocalStorage('dashboard-auto-refresh', true)
+
+const { pause, resume } = useIntervalFn(() => {
+  refreshAll()
+}, 30000)
+
+watch(autoRefresh, (enabled) => {
+  if (enabled) {
+    resume()
+  } else {
+    pause()
+  }
+}, { immediate: true })
 
 const totalAttempted = computed(() =>
   (stats.value?.sends.sent ?? 0)

@@ -304,7 +304,6 @@ async function loadKeys() {
   try {
     const { data, error } = await authClient.apiKey.list({})
     if (error) throw new Error(error.message ?? 'Failed to load keys')
-    console.log('Loaded keys:', data)
     keys.value = (data?.apiKeys ?? []) as ApiKey[]
   }
   catch (e: unknown) {

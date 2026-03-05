@@ -38,7 +38,7 @@
 
       <div class="px-4 py-4 border-t border-stone-200 dark:border-stone-800">
         <div class="flex items-center gap-3">
-          <div class="w-8 h-8 rounded-full bg-stone-200 dark:bg-stone-700 flex items-center justify-center">
+          <div class="w-8 h-8 rounded-full bg-stone-200 dark:bg-stone-700 flex items-center justify-center shrink-0">
             <UIcon
               name="i-heroicons-user"
               class="w-4 h-4 text-stone-600 dark:text-stone-300"
@@ -52,32 +52,25 @@
               {{ email }}
             </p>
           </div>
-          <button
-            class="p-2 rounded-lg text-stone-400 hover:text-stone-600 dark:hover:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
-            title="Sign out"
-            @click="logout"
+          <UTooltip
+            text="Sign out"
+            :popper="{ placement: 'top' }"
           >
-            <UIcon
-              name="i-heroicons-arrow-right-on-rectangle"
-              class="w-4 h-4"
-            />
-          </button>
+            <button
+              class="w-8 h-8 flex items-center justify-center rounded-lg text-stone-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+              @click="logout"
+            >
+              <UIcon
+                name="i-heroicons-arrow-right-on-rectangle"
+                class="w-4 h-4"
+              />
+            </button>
+          </UTooltip>
         </div>
       </div>
     </aside>
 
     <div class="flex-1 ml-64 flex flex-col min-w-0">
-      <header class="bg-white/80 dark:bg-stone-900/80 backdrop-blur-xl border-b border-stone-200 dark:border-stone-800 px-8 py-4 flex items-center justify-between sticky top-0 z-10">
-        <div class="flex items-center gap-4">
-          <h2 class="text-sm font-medium text-stone-500 dark:text-stone-400">
-            {{ pageTitle }}
-          </h2>
-        </div>
-        <div class="flex items-center gap-3">
-          <span class="text-xs text-stone-400 dark:text-stone-500">{{ currentDate }}</span>
-        </div>
-      </header>
-
       <main class="flex-1 p-8">
         <slot />
       </main>
@@ -106,28 +99,6 @@ const nav = [
   { to: '/domains', label: 'Domains', icon: 'i-heroicons-globe-alt' },
   { to: '/settings', label: 'Settings', icon: 'i-heroicons-cog-6-tooth' },
 ]
-
-const pageTitles: Record<string, string> = {
-  '/': 'Overview',
-  '/emails': 'All Emails',
-  '/suppressions': 'Suppressions',
-  '/domains': 'Domain Identities',
-  '/settings': 'Settings',
-}
-
-const pageTitle = computed(() => {
-  if (route.path.startsWith('/emails/')) return 'Email Detail'
-  return pageTitles[route.path] ?? 'Dashboard'
-})
-
-const currentDate = computed(() => {
-  return new Date().toLocaleDateString('en-US', {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  })
-})
 
 function isActive(path: string) {
   if (path === '/') return route.path === '/'
