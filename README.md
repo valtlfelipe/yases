@@ -35,7 +35,7 @@ docker run -d \
   -e BETTER_AUTH_SECRET=xxx \
   -e BETTER_AUTH_URL=https://your-domain.com \
   -e TOKEN_SECRET=xxx \
-  ghcr.io/valtlfelipe/email:latest
+  ghcr.io/valtlfelipe/yases:latest
 
 # Run the worker (separate container)
 docker run -d \
@@ -44,7 +44,7 @@ docker run -d \
   -e AWS_REGION=us-east-1 \
   -e AWS_ACCESS_KEY_ID=AKIAxxx \
   -e AWS_SECRET_ACCESS_KEY=xxx \
-  ghcr.io/valtlfelipe/email:latest bun server/workers/index.ts
+  ghcr.io/valtlfelipe/yases:latest bun server/workers/index.ts
 ```
 
 ### Prerequisites
