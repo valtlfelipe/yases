@@ -17,7 +17,7 @@ A self-hosted email service built on AWS SES with a beautiful dashboard for mana
 
 ## Self-Hosted Deployment Guide
 
-[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/EcUyHt?referralCode=ca9X8b&utm_medium=integration&utm_source=template&utm_campaign=generic)
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/deployyases-yet-another-ses-wrapper?referralCode=ca9X8b&utm_medium=integration&utm_source=template&utm_campaign=generic)
 
 ### Docker
 
