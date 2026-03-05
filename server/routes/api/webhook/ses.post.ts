@@ -19,15 +19,30 @@ export default defineEventHandler(async (event) => {
 
   if (messageType === 'SubscriptionConfirmation') {
     const subscribeUrl = body['SubscribeURL'] as string | undefined
-    if (subscribeUrl) {
-      try {
-        const res = await fetch(subscribeUrl)
-        if (!res.ok) throw new Error(`HTTP ${res.status}`)
-        console.log('[Webhook] SNS subscription confirmed')
-      }
-      catch (err) {
-        console.error('[Webhook] Failed to confirm SNS subscription:', (err as Error).message)
-      }
+    if (!subscribeUrl) return { ok: true }
+
+    let parsed: URL
+    try {
+      parsed = new URL(subscribeUrl)
+    }
+    catch {
+      console.warn('[Webhook] SNS SubscriptionConfirmation has invalid SubscribeURL')
+      return { ok: true }
+    }
+
+    const SNS_HOST_RE = /^sns\.[a-z0-9-]+\.amazonaws\.com$/
+    if (parsed.protocol !== 'https:' || !SNS_HOST_RE.test(parsed.hostname)) {
+      console.warn(`[Webhook] SNS SubscriptionConfirmation rejected — disallowed host: ${parsed.hostname}`)
+      return { ok: true }
+    }
+
+    try {
+      const res = await fetch(subscribeUrl)
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      console.log('[Webhook] SNS subscription confirmed')
+    }
+    catch (err) {
+      console.error('[Webhook] Failed to confirm SNS subscription:', (err as Error).message)
     }
     return { ok: true }
   }
