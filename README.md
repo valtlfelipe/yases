@@ -19,6 +19,34 @@ A self-hosted email service built on AWS SES with a beautiful dashboard for mana
 
 [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/EcUyHt?referralCode=ca9X8b&utm_medium=integration&utm_source=template&utm_campaign=generic)
 
+### Docker
+
+Pull the image from GitHub Container Registry:
+
+```bash
+# Run the app
+docker run -d \
+  -p 3000:3000 \
+  -e DATABASE_URL=postgres://user:pass@host:5432/db \
+  -e REDIS_URL=redis://host:6379 \
+  -e AWS_REGION=us-east-1 \
+  -e AWS_ACCESS_KEY_ID=AKIAxxx \
+  -e AWS_SECRET_ACCESS_KEY=xxx \
+  -e BETTER_AUTH_SECRET=xxx \
+  -e BETTER_AUTH_URL=https://your-domain.com \
+  -e TOKEN_SECRET=xxx \
+  ghcr.io/valtlfelipe/email:latest
+
+# Run the worker (separate container)
+docker run -d \
+  -e DATABASE_URL=postgres://user:pass@host:5432/db \
+  -e REDIS_URL=redis://host:6379 \
+  -e AWS_REGION=us-east-1 \
+  -e AWS_ACCESS_KEY_ID=AKIAxxx \
+  -e AWS_SECRET_ACCESS_KEY=xxx \
+  ghcr.io/valtlfelipe/email:latest bun server/workers/index.ts
+```
+
 ### Prerequisites
 
 - A server with a public HTTPS URL (required for AWS SNS webhooks)

@@ -225,7 +225,7 @@
               Recent Events
             </h3>
             <p class="text-sm text-stone-500 dark:text-stone-400 mt-0.5">
-              Latest delivery events from SES
+              Latest events from SES
             </p>
           </div>
           <NuxtLink
@@ -325,12 +325,12 @@
 const { stats, pending, error, refresh } = useStats()
 
 const totalAttempted = computed(() =>
-  (stats.value?.sends.sent ?? 0) +
-  (stats.value?.sends.delivered ?? 0) +
-  (stats.value?.sends.opened ?? 0) +
-  (stats.value?.sends.complained ?? 0) +
-  (stats.value?.sends.bounced ?? 0) +
-  (stats.value?.sends.failed ?? 0),
+  (stats.value?.sends.sent ?? 0)
+  + (stats.value?.sends.delivered ?? 0)
+  + (stats.value?.sends.opened ?? 0)
+  + (stats.value?.sends.complained ?? 0)
+  + (stats.value?.sends.bounced ?? 0)
+  + (stats.value?.sends.failed ?? 0),
 )
 
 const { data: eventsData, pending: eventsPending, refresh: refreshEvents } = useFetch('/api/events', {

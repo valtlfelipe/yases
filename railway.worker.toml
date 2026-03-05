@@ -1,6 +1,6 @@
 [build]
 builder = "DOCKERFILE"
-dockerfilePath = "Dockerfile.worker"
+dockerfilePath = "Dockerfile"
 
 [deploy]
 startCommand = "bun server/workers/index.ts"
