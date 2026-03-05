@@ -299,7 +299,10 @@
                   <span class="text-sm text-stone-700 dark:text-stone-300 truncate max-w-[240px] block">{{ ev.subject }}</span>
                 </td>
                 <td class="px-4 py-3">
-                  <span class="text-sm text-stone-500">{{ formatDate(ev.occurredAt) }}</span>
+                  <span
+                    class="text-sm text-stone-500"
+                    :title="formatDate(ev.occurredAt, false).tooltip ?? undefined"
+                  >{{ formatDate(ev.occurredAt, false).text }}</span>
                 </td>
                 <td class="px-4 py-3 text-right">
                   <NuxtLink
@@ -342,14 +345,7 @@ async function refreshAll() {
 
 const recentEvents = computed(() => eventsData.value ?? [])
 
-function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-  })
-}
+const { formatDate } = useRelativeTime()
 
 function formatNumber(num: number): string {
   if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M'

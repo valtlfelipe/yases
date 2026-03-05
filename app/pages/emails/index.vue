@@ -156,7 +156,10 @@
                     <StatusBadge :status="email.status" />
                   </td>
                   <td class="px-4 py-3">
-                    <span class="text-sm text-stone-500">{{ formatDate(email.createdAt) }}</span>
+                    <span
+                      class="text-sm text-stone-500"
+                      :title="formatDate(email.createdAt).tooltip ?? undefined"
+                    >{{ formatDate(email.createdAt).text }}</span>
                   </td>
                   <td class="px-4 py-3 text-right">
                     <NuxtLink
@@ -306,15 +309,7 @@ function clearFilters() {
   clearDate()
 }
 
-function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-  })
-}
+const { formatDate } = useRelativeTime()
 
 function formatNumber(num: number): string {
   if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M'
