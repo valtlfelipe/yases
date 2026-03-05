@@ -8,6 +8,9 @@ export default defineNuxtConfig({
       meta: [
         { name: 'description', content: 'YASES - Yet another SES Wrapper dashboard' },
       ],
+      link: [
+        { rel: 'icon', type: 'image/png', href: '/icon.png' }
+      ],
     },
   },
   css: ['~/assets/css/main.css'],
