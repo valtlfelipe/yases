@@ -34,6 +34,7 @@ export interface EmailFilters {
   to?: string
   dateFrom?: string
   dateTo?: string
+  status?: string
 }
 
 export function useEmails(page: Ref<number> = ref(1), limit = 20, filters: Ref<EmailFilters> = ref({})) {
@@ -44,6 +45,7 @@ export function useEmails(page: Ref<number> = ref(1), limit = 20, filters: Ref<E
     ...(filters.value.to ? { to: filters.value.to } : {}),
     ...(filters.value.dateFrom ? { dateFrom: filters.value.dateFrom } : {}),
     ...(filters.value.dateTo ? { dateTo: filters.value.dateTo } : {}),
+    ...(filters.value.status ? { status: filters.value.status } : {}),
   }))
 
   const { data, pending, error, refresh } = useFetch<EmailListResponse>('/api/emails', {

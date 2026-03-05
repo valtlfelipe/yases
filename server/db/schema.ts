@@ -86,6 +86,9 @@ export const emailStatusEnum = pgEnum('email_status', [
   'failed',
   'suppressed',
   'bounced',
+  'delivered',
+  'opened',
+  'complained',
 ])
 
 export const emailEventTypeEnum = pgEnum('email_event_type', [

@@ -33,6 +33,13 @@
           class="w-44"
         />
 
+        <USelect
+          v-model="selectedStatus"
+          :items="statusSelectItems"
+          color="neutral"
+          class="w-40"
+        />
+
         <UPopover :content="{ side: 'bottom', align: 'start' }">
           <UButton
 
@@ -218,6 +225,26 @@ watch(selectedDomain, (v) => {
   page.value = 1
 })
 
+// Status select — '_all' sentinel means no filter
+const selectedStatus = ref('_all')
+watch(selectedStatus, (v) => {
+  filters.status = v === '_all' ? undefined : v
+  page.value = 1
+})
+
+const statusSelectItems = [
+  { label: 'All statuses', value: '_all' },
+  { label: 'Queued', value: 'queued' },
+  { label: 'Sending', value: 'sending' },
+  { label: 'Sent', value: 'sent' },
+  { label: 'Delivered', value: 'delivered' },
+  { label: 'Opened', value: 'opened' },
+  { label: 'Bounced', value: 'bounced' },
+  { label: 'Complained', value: 'complained' },
+  { label: 'Failed', value: 'failed' },
+  { label: 'Suppressed', value: 'suppressed' },
+]
+
 // Recipient — debounced
 const toInput = ref('')
 let toDebounce: ReturnType<typeof setTimeout>
@@ -255,7 +282,7 @@ const { emails, pending, error } = useEmails(page, limit, filtersRef)
 const totalPages = computed(() => Math.ceil((emails.value?.total ?? 0) / limit))
 
 const hasActiveFilters = computed(() =>
-  !!(selectedDomain.value !== '_all' || toInput.value || dateRange.value),
+  !!(selectedDomain.value !== '_all' || selectedStatus.value !== '_all' || toInput.value || dateRange.value),
 )
 
 // Identities for domain dropdown
@@ -274,6 +301,7 @@ const domainSelectItems = computed(() => [
 
 function clearFilters() {
   selectedDomain.value = '_all'
+  selectedStatus.value = '_all'
   toInput.value = ''
   clearDate()
 }

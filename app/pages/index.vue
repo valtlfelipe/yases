@@ -78,7 +78,7 @@
             {{ stats.rates.delivery }}%
           </p>
           <p class="mt-1 text-xs text-stone-400 dark:text-stone-500">
-            {{ formatNumber(stats.events.delivered) }} delivered
+            {{ formatNumber(stats.deliveredCount) }} delivered
           </p>
         </div>
 
@@ -96,7 +96,7 @@
             {{ stats.rates.bounce }}%
           </p>
           <p class="mt-1 text-xs text-stone-400 dark:text-stone-500">
-            {{ formatNumber(stats.events.bounced) }} bounced
+            {{ formatNumber(stats.sends.bounced) }} bounced
           </p>
         </div>
 
@@ -114,7 +114,7 @@
             {{ stats.rates.complaint }}%
           </p>
           <p class="mt-1 text-xs text-stone-400 dark:text-stone-500">
-            {{ formatNumber(stats.events.complained) }} complaints
+            {{ formatNumber(stats.sends.complained) }} complaints
           </p>
         </div>
 
@@ -132,7 +132,7 @@
             {{ stats.rates.open }}%
           </p>
           <p class="mt-1 text-xs text-stone-400 dark:text-stone-500">
-            {{ formatNumber(stats.events.opened) }} opens
+            {{ formatNumber(stats.sends.opened) }} opens
           </p>
         </div>
       </div>
@@ -182,7 +182,7 @@
             {{ stats.rates.click }}%
           </p>
           <p class="mt-1 text-xs text-stone-400 dark:text-stone-500">
-            {{ formatNumber(stats.events.clicked) }} clicks
+            {{ formatNumber(stats.events.clicked) }} click events
           </p>
         </div>
       </div>
@@ -323,6 +323,9 @@ const { stats, pending, error, refresh } = useStats()
 
 const totalAttempted = computed(() =>
   (stats.value?.sends.sent ?? 0) +
+  (stats.value?.sends.delivered ?? 0) +
+  (stats.value?.sends.opened ?? 0) +
+  (stats.value?.sends.complained ?? 0) +
   (stats.value?.sends.bounced ?? 0) +
   (stats.value?.sends.failed ?? 0),
 )

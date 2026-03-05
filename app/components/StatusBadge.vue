@@ -19,6 +19,9 @@ const statusMap: Record<string, { bg: string, text: string }> = {
   failed: { bg: 'bg-red-500', text: 'text-red-700 dark:text-red-400' },
   suppressed: { bg: 'bg-orange-500', text: 'text-orange-700 dark:text-orange-400' },
   bounced: { bg: 'bg-red-500', text: 'text-red-700 dark:text-red-400' },
+  delivered: { bg: 'bg-emerald-500', text: 'text-emerald-700 dark:text-emerald-400' },
+  opened: { bg: 'bg-violet-500', text: 'text-violet-700 dark:text-violet-400' },
+  complained: { bg: 'bg-orange-500', text: 'text-orange-700 dark:text-orange-400' },
   // email event types
   submitted: { bg: 'bg-blue-400', text: 'text-blue-600 dark:text-blue-400' },
   send: { bg: 'bg-blue-500', text: 'text-blue-700 dark:text-blue-400' },

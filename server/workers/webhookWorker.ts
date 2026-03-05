@@ -51,7 +51,7 @@ async function handleBounce(
 
   const recipients = (bounce['bouncedRecipients'] as Array<{ emailAddress?: string, diagnosticCode?: string }>) ?? []
 
-  await db.update(emailSends).set({ status: 'bounced' }).where(eq(emailSends.id, sendRow.id))
+  await db.update(emailSends).set({ status: 'bounced', updatedAt: new Date() }).where(eq(emailSends.id, sendRow.id))
 
   await Promise.all(
     recipients.map(async (r) => {
@@ -78,6 +78,8 @@ async function handleComplaint(
 
   const recipients = (complaint['complainedRecipients'] as Array<{ emailAddress?: string }>) ?? []
 
+  await db.update(emailSends).set({ status: 'complained', updatedAt: new Date() }).where(eq(emailSends.id, sendRow.id))
+
   await Promise.all(
     recipients.map(async (r) => {
       if (!r.emailAddress) return
@@ -96,6 +98,8 @@ async function handleDelivery(
   const sesMessageId = extractMessageId(notification)
   const delivery = notification['delivery'] as Record<string, unknown> | undefined
   const sendRow = await requireSendByMessageId(sesMessageId)
+
+  await db.update(emailSends).set({ status: 'delivered', updatedAt: new Date() }).where(eq(emailSends.id, sendRow.id))
 
   await insertEvent(sendRow.id, sesMessageId, 'delivery', rawPayload, {
     smtpResponse: delivery?.['smtpResponse'],
@@ -122,6 +126,7 @@ async function handleOpen(
 
   const sesMessageId = extractMessageId(notification)
   const sendRow = await requireSendByMessageId(sesMessageId)
+  await db.update(emailSends).set({ status: 'opened', updatedAt: new Date() }).where(eq(emailSends.id, sendRow.id))
   await insertEvent(sendRow.id, sesMessageId, 'open', rawPayload, { ipAddress, userAgent })
 }
 

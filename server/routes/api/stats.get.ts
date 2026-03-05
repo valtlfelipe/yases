@@ -42,18 +42,17 @@ export default defineEventHandler(async (event) => {
 
     db.execute(sql`
       SELECT
-        to_char(date_trunc('day', es.created_at), 'YYYY-MM-DD') AS date,
-        COUNT(DISTINCT es.id) AS total,
-        COUNT(DISTINCT es.id) AS sent,
-        COUNT(DISTINCT CASE WHEN ee.event_type = 'delivery' THEN es.id END) AS delivered,
-        COUNT(DISTINCT CASE WHEN ee.event_type = 'bounce' THEN es.id END) AS bounced,
-        COUNT(DISTINCT CASE WHEN ee.event_type = 'open' THEN es.id END) AS opened,
-        COUNT(DISTINCT es.id) FILTER (WHERE es.status = 'failed') AS failed
-      FROM email_sends es
-      LEFT JOIN email_events ee ON ee.email_send_id = es.id
-      WHERE es.created_at >= NOW() - INTERVAL '7 days'
-      GROUP BY date_trunc('day', es.created_at)
-      ORDER BY date_trunc('day', es.created_at)
+        to_char(date_trunc('day', created_at), 'YYYY-MM-DD') AS date,
+        COUNT(*) AS total,
+        COUNT(*) FILTER (WHERE status IN ('sent', 'delivered', 'opened', 'complained', 'bounced')) AS sent,
+        COUNT(*) FILTER (WHERE status IN ('delivered', 'opened', 'complained')) AS delivered,
+        COUNT(*) FILTER (WHERE status = 'bounced') AS bounced,
+        COUNT(*) FILTER (WHERE status = 'opened') AS opened,
+        COUNT(*) FILTER (WHERE status = 'failed') AS failed
+      FROM email_sends
+      WHERE created_at >= NOW() - INTERVAL '7 days'
+      GROUP BY date_trunc('day', created_at)
+      ORDER BY date_trunc('day', created_at)
     `),
   ])
 
@@ -70,6 +69,9 @@ export default defineEventHandler(async (event) => {
     failed: sendsByStatus['failed'] ?? 0,
     suppressed: sendsByStatus['suppressed'] ?? 0,
     bounced: sendsByStatus['bounced'] ?? 0,
+    delivered: sendsByStatus['delivered'] ?? 0,
+    opened: sendsByStatus['opened'] ?? 0,
+    complained: sendsByStatus['complained'] ?? 0,
   }
 
   const eventsByType: Record<string, number> = {}
@@ -85,13 +87,17 @@ export default defineEventHandler(async (event) => {
     clicked: eventsByType['click'] ?? 0,
   }
 
-  const totalAttempted = sends.sent + sends.failed + sends.bounced
+  // emails that left the queue and reached SES (excludes queued / sending / suppressed)
+  const totalAttempted = sends.sent + sends.delivered + sends.opened + sends.complained + sends.failed + sends.bounced
+  // emails confirmed delivered by SES (regardless of whether they later opened or complained)
+  const deliveredCount = sends.delivered + sends.opened + sends.complained
+
   const rates = {
-    delivery: totalAttempted > 0 ? Math.round((events.delivered / totalAttempted) * 1000) / 10 : 0,
-    bounce: totalAttempted > 0 ? Math.round((events.bounced / totalAttempted) * 1000) / 10 : 0,
-    complaint: totalAttempted > 0 ? Math.round((events.complained / totalAttempted) * 1000) / 10 : 0,
-    open: events.delivered > 0 ? Math.round((events.opened / events.delivered) * 1000) / 10 : 0,
-    click: events.delivered > 0 ? Math.round((events.clicked / events.delivered) * 1000) / 10 : 0,
+    delivery: totalAttempted > 0 ? Math.round((deliveredCount / totalAttempted) * 1000) / 10 : 0,
+    bounce: totalAttempted > 0 ? Math.round((sends.bounced / totalAttempted) * 1000) / 10 : 0,
+    complaint: totalAttempted > 0 ? Math.round((sends.complained / totalAttempted) * 1000) / 10 : 0,
+    open: deliveredCount > 0 ? Math.round((sends.opened / deliveredCount) * 1000) / 10 : 0,
+    click: deliveredCount > 0 ? Math.round((events.clicked / deliveredCount) * 1000) / 10 : 0,
   }
 
   const suppressions = suppressionsRow[0]?.total ?? 0
@@ -108,5 +114,5 @@ export default defineEventHandler(async (event) => {
     failed: parseInt(r.failed, 10),
   }))
 
-  return { sends, events, rates, suppressions, trend }
+  return { sends, events, rates, suppressions, trend, deliveredCount }
 })
