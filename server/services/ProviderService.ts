@@ -48,6 +48,10 @@ export class ProviderLockedActiveError extends Error {
 }
 
 export class ProviderService {
+  private static readonly INSTANCE_CACHE_TTL_MS = 60_000
+  private static instanceCache = new Map<string, { instance: IProvider, expiresAt: number }>()
+  private static defaultProviderCache: { providerId: string, expiresAt: number } | null = null
+
   async list(): Promise<ProviderWithCredentials[]> {
     const rows = await db.select().from(providers)
 
@@ -169,6 +173,8 @@ export class ProviderService {
     const row = rows[0]
     if (!row) return null
 
+    await this.invalidateProviderCache(id)
+
     return {
       id: row.id,
       name: row.name as ProviderType,
@@ -209,6 +215,8 @@ export class ProviderService {
       .delete(providers)
       .where(eq(providers.id, id))
       .returning()
+
+    await this.invalidateProviderCache(id)
 
     return result.length > 0
   }
@@ -252,6 +260,7 @@ export class ProviderService {
         webhookUrl,
       }
       await this.update(id, { settings: newSettings, isActive: true })
+      await this.invalidateProviderCache(id)
     }
 
     return result
@@ -278,21 +287,35 @@ export class ProviderService {
   }
 
   async getInstanceById(id?: string | null): Promise<IProvider> {
-    if (!id) {
-      const defaultProvider = await this.getDefaultActiveProvider()
-      if (!defaultProvider) {
-        throw new Error('No active provider configured')
+    if (id) {
+      const cached = this.getCachedInstance(id)
+      if (cached) {
+        return cached
       }
 
-      return this.getInstanceWithConfig(defaultProvider)
+      const provider = await this.getById(id)
+      if (!provider) {
+        throw new Error('Provider not found')
+      }
+
+      return this.cacheInstance(provider)
     }
 
-    const provider = await this.getById(id)
-    if (!provider) {
-      throw new Error('Provider not found')
+    const defaultCached = this.getCachedDefaultProvider()
+    if (defaultCached) {
+      const cachedInstance = this.getCachedInstance(defaultCached.providerId)
+      if (cachedInstance) {
+        return cachedInstance
+      }
     }
 
-    return this.getInstanceWithConfig(provider)
+    const defaultProvider = await this.getDefaultActiveProvider()
+    if (!defaultProvider) {
+      throw new Error('No active provider configured')
+    }
+
+    this.cacheDefaultProvider(defaultProvider.id)
+    return this.cacheInstance(defaultProvider)
   }
 
   private async getDefaultActiveProvider(): Promise<ProviderWithCredentials | null> {
@@ -329,5 +352,75 @@ export class ProviderService {
   private decryptCredentials(encrypted: EncryptedData): ProviderCredentials {
     const decrypted = decrypt(encrypted)
     return JSON.parse(decrypted) as ProviderCredentials
+  }
+
+  private getCachedInstance(providerId: string): IProvider | null {
+    const cached = ProviderService.instanceCache.get(providerId)
+    if (!cached) {
+      return null
+    }
+
+    if (cached.expiresAt <= Date.now()) {
+      ProviderService.instanceCache.delete(providerId)
+      void cached.instance.destroy().catch(() => {})
+      return null
+    }
+
+    return cached.instance
+  }
+
+  private cacheInstance(provider: ProviderWithCredentials): IProvider {
+    const existing = this.getCachedInstance(provider.id)
+    if (existing) {
+      return existing
+    }
+
+    const instance = this.getInstanceWithConfig(provider)
+    ProviderService.instanceCache.set(provider.id, {
+      instance,
+      expiresAt: Date.now() + ProviderService.INSTANCE_CACHE_TTL_MS,
+    })
+    return instance
+  }
+
+  private getCachedDefaultProvider(): { providerId: string } | null {
+    const cached = ProviderService.defaultProviderCache
+    if (!cached) {
+      return null
+    }
+
+    if (cached.expiresAt <= Date.now()) {
+      ProviderService.defaultProviderCache = null
+      return null
+    }
+
+    return { providerId: cached.providerId }
+  }
+
+  private cacheDefaultProvider(providerId: string): void {
+    ProviderService.defaultProviderCache = {
+      providerId,
+      expiresAt: Date.now() + ProviderService.INSTANCE_CACHE_TTL_MS,
+    }
+  }
+
+  private async invalidateProviderCache(providerId?: string): Promise<void> {
+    if (!providerId) {
+      const entries = Array.from(ProviderService.instanceCache.values())
+      ProviderService.instanceCache.clear()
+      ProviderService.defaultProviderCache = null
+      await Promise.all(entries.map(({ instance }) => instance.destroy().catch(() => {})))
+      return
+    }
+
+    const cached = ProviderService.instanceCache.get(providerId)
+    if (cached) {
+      ProviderService.instanceCache.delete(providerId)
+      await cached.instance.destroy().catch(() => {})
+    }
+
+    if (ProviderService.defaultProviderCache?.providerId === providerId) {
+      ProviderService.defaultProviderCache = null
+    }
   }
 }
