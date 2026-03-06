@@ -21,19 +21,61 @@
       </div>
 
       <nav class="flex-1 px-3 py-4 space-y-1">
-        <NuxtLink
+        <div
           v-for="item in nav"
           :key="item.to"
-          :to="item.to"
-          class="nav-item"
-          :class="isActive(item.to) ? 'nav-item-active' : 'nav-item-inactive'"
         >
-          <UIcon
-            :name="item.icon"
-            class="w-5 h-5 shrink-0"
-          />
-          <span>{{ item.label }}</span>
-        </NuxtLink>
+          <NuxtLink
+            v-if="!item.children?.length"
+            :to="item.to"
+            class="nav-item"
+            :class="isActive(item.to) ? 'nav-item-active' : 'nav-item-inactive'"
+          >
+            <UIcon
+              :name="item.icon"
+              class="w-5 h-5 shrink-0"
+            />
+            <span>{{ item.label }}</span>
+          </NuxtLink>
+
+          <button
+            v-else
+            type="button"
+            class="nav-item w-full"
+            :class="isActive(item.to) ? 'nav-item-active' : 'nav-item-inactive'"
+            :aria-expanded="isExpanded(item.to)"
+            @click="toggleSection(item.to)"
+          >
+            <UIcon
+              :name="item.icon"
+              class="w-5 h-5 shrink-0"
+            />
+            <span class="flex-1 text-left">{{ item.label }}</span>
+            <UIcon
+              name="i-heroicons-chevron-right"
+              class="w-4 h-4 shrink-0 transition-transform"
+              :class="isExpanded(item.to) ? 'rotate-90' : ''"
+            />
+          </button>
+
+          <div
+            v-if="item.children?.length"
+            v-show="isExpanded(item.to)"
+            class="mt-1 ml-7 space-y-1 border-l border-stone-200 dark:border-stone-800 pl-3"
+          >
+            <NuxtLink
+              v-for="child in item.children"
+              :key="child.to"
+              :to="child.to"
+              class="block text-sm px-2 py-1.5 rounded-md transition-colors"
+              :class="isExactActive(child.to)
+                ? 'text-stone-900 dark:text-stone-100 bg-stone-100 dark:bg-stone-800'
+                : 'text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 hover:bg-stone-100/80 dark:hover:bg-stone-800/60'"
+            >
+              {{ child.label }}
+            </NuxtLink>
+          </div>
+        </div>
       </nav>
 
       <div class="px-4 py-4 border-t border-stone-200 dark:border-stone-800">
@@ -96,13 +138,43 @@ const nav = [
   { to: '/', label: 'Dashboard', icon: 'i-heroicons-squares-2x2' },
   { to: '/emails', label: 'Emails', icon: 'i-heroicons-envelope' },
   { to: '/suppressions', label: 'Suppressions', icon: 'i-heroicons-no-symbol' },
-  { to: '/domains', label: 'Domains', icon: 'i-heroicons-globe-alt' },
-  { to: '/providers', label: 'Providers', icon: 'i-heroicons-cloud' },
-  { to: '/settings', label: 'Settings', icon: 'i-heroicons-cog-6-tooth' },
+  {
+    to: '/settings',
+    label: 'Settings',
+    icon: 'i-heroicons-cog-6-tooth',
+    children: [
+      { to: '/settings', label: 'Overview' },
+      { to: '/settings/api-keys', label: 'API Keys' },
+      { to: '/settings/domains', label: 'Domains' },
+      { to: '/settings/providers', label: 'Providers' },
+    ],
+  },
 ]
+
+const expandedSections = ref<Record<string, boolean>>({
+  '/settings': route.path.startsWith('/settings'),
+})
 
 function isActive(path: string) {
   if (path === '/') return route.path === '/'
   return route.path.startsWith(path)
 }
+
+function isExactActive(path: string) {
+  return route.path === path
+}
+
+function isExpanded(path: string) {
+  return !!expandedSections.value[path]
+}
+
+function toggleSection(path: string) {
+  expandedSections.value[path] = !expandedSections.value[path]
+}
+
+watch(() => route.path, (newPath) => {
+  if (newPath.startsWith('/settings')) {
+    expandedSections.value['/settings'] = true
+  }
+})
 </script>
