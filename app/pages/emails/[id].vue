@@ -75,6 +75,14 @@
                 {{ email.from }}
               </dd>
             </div>
+            <div class="flex justify-between items-center py-2 border-b border-stone-100 dark:border-stone-800">
+              <dt class="text-sm text-stone-500 dark:text-stone-400 shrink-0 mr-4">
+                Provider
+              </dt>
+              <dd class="text-sm text-stone-900 dark:text-stone-100">
+                {{ email.providerName ?? 'Unknown' }}
+              </dd>
+            </div>
             <div
               v-if="email.replyTo"
               class="flex justify-between items-center py-2 border-b border-stone-100 dark:border-stone-800"

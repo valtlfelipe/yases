@@ -1,6 +1,6 @@
 import { eq, asc } from 'drizzle-orm'
 import { db } from '../../../db/index'
-import { emailSends, emailEvents } from '../../../db/schema'
+import { emailSends, emailEvents, emailIdentities, providers } from '../../../db/schema'
 import { requireApiAuth } from '../../../utils/requireApiAuth'
 
 export default defineEventHandler(async (event) => {
@@ -14,7 +14,17 @@ export default defineEventHandler(async (event) => {
   }
 
   const [rows, events] = await Promise.all([
-    db.select().from(emailSends).where(eq(emailSends.id, id)).limit(1),
+    db
+      .select({
+        send: emailSends,
+        providerName: providers.name,
+        providerDisplayName: providers.displayName,
+      })
+      .from(emailSends)
+      .leftJoin(emailIdentities, eq(emailSends.fromDomain, emailIdentities.domain))
+      .leftJoin(providers, eq(emailIdentities.providerId, providers.id))
+      .where(eq(emailSends.id, id))
+      .limit(1),
     db
       .select()
       .from(emailEvents)
@@ -27,7 +37,8 @@ export default defineEventHandler(async (event) => {
     return { error: 'Not found' }
   }
 
-  const send = rows[0]!
+  const row = rows[0]!
+  const send = row.send
 
   const timeline = events.map(e => ({
     event: e.eventType,
@@ -35,5 +46,9 @@ export default defineEventHandler(async (event) => {
     metadata: e.metadata ?? null,
   }))
 
-  return { ...send, timeline }
+  return {
+    ...send,
+    providerName: row.providerDisplayName ?? row.providerName ?? null,
+    timeline,
+  }
 })

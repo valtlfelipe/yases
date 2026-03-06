@@ -9,6 +9,7 @@ interface EmailSend {
   status: string
   jobId: string | null
   providerMessageId: string | null
+  providerName?: string | null
   attempts: number
   lastError: string | null
   createdAt: string
