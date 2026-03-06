@@ -344,7 +344,8 @@ const { pause, resume } = useIntervalFn(() => {
 watch(autoRefresh, (enabled) => {
   if (enabled) {
     resume()
-  } else {
+  }
+  else {
     pause()
   }
 }, { immediate: true })

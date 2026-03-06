@@ -54,13 +54,14 @@ export async function setupAwsAccount(params: {
   let topicArn: string
   try {
     const topicResult = await snsClient.send(
-      new CreateTopicCommand({ Name: topicName })
+      new CreateTopicCommand({ Name: topicName }),
     )
     if (!topicResult.TopicArn) {
       return { success: false, details: { error: 'CreateTopic returned no ARN' } }
     }
     topicArn = topicResult.TopicArn
-  } catch (err) {
+  }
+  catch (err) {
     const error = err as { name?: string }
     if (error.name !== 'AlreadyExists') {
       throw err
@@ -92,18 +93,20 @@ export async function setupAwsAccount(params: {
         TopicArn: topicArn,
         AttributeName: 'Policy',
         AttributeValue: topicPolicy,
-      })
+      }),
     )
-  } catch {
+  }
+  catch {
     // Policy might already exist, continue
   }
 
   // Step 3: Create SES configuration set
   try {
     await sesClient.send(
-      new CreateConfigurationSetCommand({ ConfigurationSetName: configSetName })
+      new CreateConfigurationSetCommand({ ConfigurationSetName: configSetName }),
     )
-  } catch (err) {
+  }
+  catch (err) {
     const error = err as { name?: string }
     if (error.name !== 'AlreadyExistsException') {
       // Continue anyway
@@ -114,11 +117,11 @@ export async function setupAwsAccount(params: {
   const { EventDestinations: existing = [] } = await sesClient.send(
     new GetConfigurationSetEventDestinationsCommand({
       ConfigurationSetName: configSetName,
-    })
+    }),
   )
 
   const alreadyHasDestination = existing.some(
-    d => d.Name === eventDestinationName
+    d => d.Name === eventDestinationName,
   )
 
   const allEventTypes = ['SEND', 'REJECT', 'BOUNCE', 'COMPLAINT', 'DELIVERY', 'OPEN', 'CLICK'] as const
@@ -133,9 +136,10 @@ export async function setupAwsAccount(params: {
           MatchingEventTypes: [...allEventTypes],
           SnsDestination: { TopicArn: topicArn },
         },
-      })
+      }),
     )
-  } else {
+  }
+  else {
     await sesClient.send(
       new CreateConfigurationSetEventDestinationCommand({
         ConfigurationSetName: configSetName,
@@ -145,14 +149,14 @@ export async function setupAwsAccount(params: {
           MatchingEventTypes: [...allEventTypes],
           SnsDestination: { TopicArn: topicArn },
         },
-      })
+      }),
     )
   }
 
   // Step 5: Subscribe webhook to SNS topic
   try {
     const { Subscriptions = [] } = await snsClient.send(
-      new ListSubscriptionsByTopicCommand({ TopicArn: topicArn })
+      new ListSubscriptionsByTopicCommand({ TopicArn: topicArn }),
     )
 
     const existingSub = Subscriptions.find(s => s.Endpoint === webhookUrl)
@@ -163,10 +167,11 @@ export async function setupAwsAccount(params: {
           TopicArn: topicArn,
           Protocol: protocol,
           Endpoint: webhookUrl,
-        })
+        }),
       )
     }
-  } catch {
+  }
+  catch {
     // Subscription might fail if endpoint is not reachable
   }
 

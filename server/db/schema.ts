@@ -59,7 +59,7 @@ export const verification = pgTable('verification', {
   expiresAt: timestamp('expires_at').notNull(),
   createdAt: timestamp('created_at'),
   updatedAt: timestamp('updated_at'),
-}, (table) => [
+}, table => [
   index('idx_verification_identifier').on(table.identifier),
 ])
 
@@ -92,10 +92,10 @@ export const emailStatusEnum = pgEnum('email_status', [
 ])
 
 export const emailEventTypeEnum = pgEnum('email_event_type', [
-  'queued',     // email record created, waiting to be processed
+  'queued', // email record created, waiting to be processed
   'suppressed', // recipient is on suppression list, not sent
-  'submitted',  // we handed the email to SES (worker)
-  'send',       // SES confirmed it started transmitting (SNS)
+  'submitted', // we handed the email to SES (worker)
+  'send', // SES confirmed it started transmitting (SNS)
   'delivery',
   'bounce',
   'complaint',
@@ -131,7 +131,7 @@ export const emailSends = pgTable('email_sends', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
   sentAt: timestamp('sent_at'),
-}, (table) => [
+}, table => [
   index('idx_email_sends_status').on(table.status),
   index('idx_email_sends_created_at').on(table.createdAt),
   index('idx_email_sends_to').on(table.to),
@@ -186,7 +186,7 @@ export const apikey = pgTable('apikey', {
   updatedAt: timestamp('updated_at').notNull(),
   permissions: text('permissions'),
   metadata: text('metadata'),
-}, (table) => [
+}, table => [
   index('idx_apikey_key').on(table.key),
 ])
 
@@ -200,7 +200,7 @@ export const emailEvents = pgTable('email_events', {
   rawPayload: jsonb('raw_payload').notNull(),
   metadata: jsonb('metadata'),
   occurredAt: timestamp('occurred_at').defaultNow().notNull(),
-}, (table) => [
+}, table => [
   index('idx_email_events_event_type').on(table.eventType),
   index('idx_email_events_occurred_at').on(table.occurredAt),
 ])

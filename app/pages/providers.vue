@@ -104,7 +104,9 @@
                       </div>
                       <div>
                         <span class="text-sm font-medium text-stone-700 dark:text-stone-300">{{ item.displayName }}</span>
-                        <p class="text-xs text-stone-500 dark:text-stone-400">{{ item.name }}</p>
+                        <p class="text-xs text-stone-500 dark:text-stone-400">
+                          {{ item.name }}
+                        </p>
                       </div>
                     </div>
                   </td>
@@ -352,7 +354,10 @@
             :title="setupResult.success ? 'Setup successful' : 'Setup failed'"
           >
             <template #description>
-              <pre v-if="setupResult.details" class="text-xs mt-1 whitespace-pre-wrap">{{ JSON.stringify(setupResult.details, null, 2) }}</pre>
+              <pre
+                v-if="setupResult.details"
+                class="text-xs mt-1 whitespace-pre-wrap"
+              >{{ JSON.stringify(setupResult.details, null, 2) }}</pre>
             </template>
           </UAlert>
 
@@ -548,14 +553,16 @@ async function saveProvider() {
     credentials.accessKeyId = formData.credentials.accessKeyId
     credentials.secretAccessKey = formData.credentials.secretAccessKey
     credentials.region = formData.credentials.region || 'us-east-1'
-  } else if (formData.name === 'sendgrid') {
+  }
+  else if (formData.name === 'sendgrid') {
     if (!formData.credentials.apiKey) {
       formError.value = 'Please enter your SendGrid API key.'
       savingProvider.value = false
       return
     }
     credentials.apiKey = formData.credentials.apiKey
-  } else if (formData.name === 'mailgun') {
+  }
+  else if (formData.name === 'mailgun') {
     if (!formData.credentials.mailgunApiKey) {
       formError.value = 'Please enter your Mailgun API key.'
       savingProvider.value = false
@@ -574,7 +581,8 @@ async function saveProvider() {
         body: { credentials },
       })
       toast.add({ title: 'Provider updated', color: 'success' })
-    } else {
+    }
+    else {
       await $fetch('/api/providers', {
         method: 'POST',
         credentials: 'include',
@@ -588,10 +596,12 @@ async function saveProvider() {
     }
     closeProviderModal()
     await refreshList()
-  } catch (e: unknown) {
+  }
+  catch (e: unknown) {
     const msg = (e as { data?: { message?: string } })?.data?.message ?? 'Failed to save provider'
     formError.value = msg
-  } finally {
+  }
+  finally {
     savingProvider.value = false
   }
 }
@@ -602,19 +612,22 @@ const testingProvider = ref<string | null>(null)
 async function testConnection(id: string) {
   testingProvider.value = id
   try {
-    const result = await $fetch<{ success: boolean; message?: string }>(`/api/providers/${id}/test`, {
+    const result = await $fetch<{ success: boolean, message?: string }>(`/api/providers/${id}/test`, {
       method: 'POST',
       credentials: 'include',
     })
     if (result.success) {
       toast.add({ title: 'Connection successful', color: 'success' })
-    } else {
+    }
+    else {
       toast.add({ title: 'Connection failed', description: result.message, color: 'error' })
     }
-  } catch (e: unknown) {
+  }
+  catch (e: unknown) {
     const msg = (e as { data?: { message?: string } })?.data?.message ?? 'Connection test failed'
     toast.add({ title: 'Connection failed', description: msg, color: 'error' })
-  } finally {
+  }
+  finally {
     testingProvider.value = null
   }
 }
@@ -624,7 +637,7 @@ const showSetupModal = ref(false)
 const setupProvider = ref<Provider | null>(null)
 const webhookUrl = ref('')
 const settingUp = ref(false)
-const setupResult = ref<{ success: boolean; details?: Record<string, unknown> } | null>(null)
+const setupResult = ref<{ success: boolean, details?: Record<string, unknown> } | null>(null)
 
 const webhookEndpoint = computed(() => {
   const host = webhookUrl.value.trim() || 'https://your-domain.com'
@@ -665,15 +678,17 @@ async function runSetup() {
       credentials: 'include',
       body: { webhookUrl: fullWebhookUrl },
     })
-    setupResult.value = result as { success: boolean; details?: Record<string, unknown> }
+    setupResult.value = result as { success: boolean, details?: Record<string, unknown> }
     if (result.success) {
       toast.add({ title: 'Webhook configured successfully', color: 'success' })
       await refreshList()
     }
-  } catch (e: unknown) {
+  }
+  catch (e: unknown) {
     const msg = (e as { data?: { message?: string } })?.data?.message ?? 'Setup failed'
     setupResult.value = { success: false, details: { error: msg } }
-  } finally {
+  }
+  finally {
     settingUp.value = false
   }
 }
@@ -701,9 +716,11 @@ async function deleteProvider() {
     providerToDelete.value = null
     await refreshList()
     toast.add({ title: 'Provider removed', color: 'success' })
-  } catch {
+  }
+  catch {
     toast.add({ title: 'Removal failed', color: 'error' })
-  } finally {
+  }
+  finally {
     deleting.value = false
   }
 }

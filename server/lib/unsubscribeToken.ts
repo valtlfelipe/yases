@@ -8,7 +8,7 @@ export function signUnsubscribeToken(email: string, secret: string, emailSendId?
   return `${payload}.${sig}`
 }
 
-export function verifyUnsubscribeToken(token: string, secret: string): { email: string; emailSendId?: string } | null {
+export function verifyUnsubscribeToken(token: string, secret: string): { email: string, emailSendId?: string } | null {
   const dotIdx = token.lastIndexOf('.')
   if (dotIdx === -1) return null
 
@@ -27,7 +27,7 @@ export function verifyUnsubscribeToken(token: string, secret: string): { email: 
   }
 
   try {
-    const data = JSON.parse(Buffer.from(payload, 'base64url').toString()) as { email: string; exp: number; emailSendId?: string }
+    const data = JSON.parse(Buffer.from(payload, 'base64url').toString()) as { email: string, exp: number, emailSendId?: string }
     if (Date.now() > data.exp) return null
     return { email: data.email, emailSendId: data.emailSendId }
   }

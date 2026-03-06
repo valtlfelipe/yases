@@ -25,7 +25,8 @@ export function parseAwsWebhook(body: unknown): WebhookPayload {
   let notification: Record<string, unknown>
   try {
     notification = JSON.parse(payload['Message'] as string)
-  } catch {
+  }
+  catch {
     return {
       provider: 'aws' as ProviderType,
       rawBody: body,
@@ -80,13 +81,13 @@ export function parseAwsWebhook(body: unknown): WebhookPayload {
 
 function normalizeEventType(notificationType: string): string {
   const mapping: Record<string, string> = {
-    'Bounce': 'bounce',
-    'Complaint': 'complaint',
-    'Delivery': 'delivery',
-    'Send': 'send',
-    'Reject': 'reject',
-    'Open': 'open',
-    'Click': 'click',
+    Bounce: 'bounce',
+    Complaint: 'complaint',
+    Delivery: 'delivery',
+    Send: 'send',
+    Reject: 'reject',
+    Open: 'open',
+    Click: 'click',
   }
   return mapping[notificationType] || notificationType.toLowerCase()
 }

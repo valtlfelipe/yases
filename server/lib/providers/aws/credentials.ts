@@ -17,7 +17,8 @@ export async function validateAwsCredentials(credentials: ProviderCredentials): 
   try {
     await client.send(new GetAccountCommand({}))
     return true
-  } catch (e) {
+  }
+  catch (e) {
     console.error('AWS credentials validation failed:', e)
     return false
   }
