@@ -17,7 +17,7 @@
               Domains
             </h2>
             <p class="text-sm text-stone-500 dark:text-stone-400 mt-0.5">
-              Verified sending domains registered with AWS SES.
+              Verified sending domains and their assigned providers.
             </p>
           </div>
           <UButton
@@ -79,13 +79,13 @@
                     Domain
                   </th>
                   <th class="px-4 py-3 text-left text-xs font-medium text-stone-500 dark:text-stone-400 uppercase tracking-wider">
+                    Provider
+                  </th>
+                  <th class="px-4 py-3 text-left text-xs font-medium text-stone-500 dark:text-stone-400 uppercase tracking-wider">
                     Status
                   </th>
                   <th class="px-4 py-3 text-left text-xs font-medium text-stone-500 dark:text-stone-400 uppercase tracking-wider">
                     Health
-                  </th>
-                  <th class="px-4 py-3 text-left text-xs font-medium text-stone-500 dark:text-stone-400 uppercase tracking-wider">
-                    DKIM
                   </th>
                   <th class="px-4 py-3 text-left text-xs font-medium text-stone-500 dark:text-stone-400 uppercase tracking-wider">
                     Mail From
@@ -106,6 +106,9 @@
                     <span class="text-sm font-medium text-stone-700 dark:text-stone-300">{{ item.domain }}</span>
                   </td>
                   <td class="px-4 py-3">
+                    <span class="text-sm text-stone-500 dark:text-stone-400">{{ item.providerDisplayName ?? item.providerName ?? '—' }}</span>
+                  </td>
+                  <td class="px-4 py-3">
                     <StatusBadge :status="item.status" />
                   </td>
                   <td class="px-4 py-3">
@@ -113,9 +116,6 @@
                       :domain="item.domain"
                       :has-tenant="!!item.tenantName"
                     />
-                  </td>
-                  <td class="px-4 py-3">
-                    <span class="text-sm text-stone-500 dark:text-stone-400">{{ item.dkimStatus ?? '—' }}</span>
                   </td>
                   <td class="px-4 py-3">
                     <span class="text-sm text-stone-500 dark:text-stone-400">{{ item.mailFromDomain ?? '—' }}</span>
@@ -249,6 +249,18 @@
             <UInput
               v-model="formMailFrom"
               placeholder="mail"
+              class="w-full"
+            />
+          </UFormField>
+
+          <UFormField
+            label="Provider"
+            help="Select the email provider to use for this domain."
+          >
+            <USelect
+              v-model="formProviderId"
+              :items="providerOptions"
+              placeholder="Select a provider"
               class="w-full"
             />
           </UFormField>
@@ -542,6 +554,12 @@ const toast = useToast()
 const page = ref(1)
 const limit = 20
 
+// --- Providers ---
+const { data: providersData } = useFetch<{ id: string, displayName: string }[]>('/api/providers', {
+  credentials: 'include',
+  key: 'providers-select',
+})
+
 const { data, pending, error, refresh: refreshList } = useFetch('/api/identities', {
   credentials: 'include',
   query: { page, limit },
@@ -556,14 +574,23 @@ const showAddModal = ref(false)
 const addStep = ref(1)
 const formDomain = ref('')
 const formMailFrom = ref('mail')
+const formProviderId = ref('')
 const adding = ref(false)
 const addError = ref<string | null>(null)
 const dnsResult = ref<DnsResult | null>(null)
+
+const providerOptions = computed(() => {
+  return (providersData.value || []).map(p => ({
+    label: p.displayName,
+    value: p.id,
+  }))
+})
 
 function openAddModal() {
   addStep.value = 1
   formDomain.value = ''
   formMailFrom.value = 'mail'
+  formProviderId.value = ''
   addError.value = null
   dnsResult.value = null
   showAddModal.value = true
@@ -580,6 +607,11 @@ async function addDomain() {
     return
   }
 
+  if (!formProviderId.value) {
+    addError.value = 'Please select a provider.'
+    return
+  }
+
   adding.value = true
   addError.value = null
   try {
@@ -589,6 +621,7 @@ async function addDomain() {
       body: {
         domain,
         mailFromSubdomain: formMailFrom.value.trim() || 'mail',
+        providerId: formProviderId.value,
       },
     })
     dnsResult.value = result.dnsRecords
@@ -648,7 +681,7 @@ async function refreshDomain(domain: string) {
 }
 
 // --- Copy ---
-const copiedField = reactive<{ name: string | null; value: string | null }>({
+const copiedField = reactive<{ name: string | null, value: string | null }>({
   name: null,
   value: null,
 })

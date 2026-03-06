@@ -10,142 +10,141 @@ import type { WebhookJobData } from '../queue/types'
 const suppressionService = new SuppressionService()
 
 async function processWebhookJob(job: Job<WebhookJobData>): Promise<void> {
-  const { notificationType, notification, rawPayload } = job.data
-  const sesMessageId = extractMessageId(notification)
-  console.log(`[WebhookWorker] Processing ${notificationType} | sesMessageId: ${sesMessageId} | attempt: ${job.attemptsMade + 1}`)
+  const { provider, event, rawPayload } = job.data
+  const eventType = event.eventType.toLowerCase()
+  const providerMessageId = event.messageId ?? ''
+  console.log(`[WebhookWorker] Processing ${provider}:${eventType} | providerMessageId: ${providerMessageId || '(none)'} | attempt: ${job.attemptsMade + 1}`)
 
-  switch (notificationType) {
-    case 'Send': return handleSend(notification, rawPayload)
-    case 'Bounce': return handleBounce(notification, rawPayload)
-    case 'Complaint': return handleComplaint(notification, rawPayload)
-    case 'Delivery': return handleDelivery(notification, rawPayload)
-    case 'Open': return handleOpen(notification, rawPayload)
-    case 'Click': return handleClick(notification, rawPayload)
+  switch (eventType) {
+    case 'send':
+      return handleSend(event, rawPayload)
+    case 'bounce':
+      return handleBounce(event, rawPayload)
+    case 'complaint':
+      return handleComplaint(event, rawPayload)
+    case 'delivery':
+      return handleDelivery(event, rawPayload)
+    case 'open':
+      return handleOpen(event, rawPayload)
+    case 'click':
+      return handleClick(event, rawPayload)
     default:
-      console.warn(`[WebhookWorker] Unhandled notification type: ${notificationType}`)
+      console.warn(`[WebhookWorker] Unhandled notification type: ${provider}:${eventType}`)
+      return handleGeneric(event, rawPayload)
   }
 }
 
-// ── handlers ───────────────────────────────────────────────────────────────
-
-async function handleSend(
-  notification: Record<string, unknown>,
-  rawPayload: Record<string, unknown>,
-): Promise<void> {
-  const sesMessageId = extractMessageId(notification)
-  const sendRow = await requireSendByMessageId(sesMessageId)
-  await insertEvent(sendRow.id, sesMessageId, 'send', rawPayload, {})
+async function handleSend(event: WebhookJobData['event'], rawPayload: Record<string, unknown>): Promise<void> {
+  const sendRow = await requireSendByMessageId(event.messageId ?? '')
+  await insertEvent(sendRow.id, event.messageId ?? '', 'send', rawPayload, event.metadata ?? {})
 }
 
-async function handleBounce(
-  notification: Record<string, unknown>,
-  rawPayload: Record<string, unknown>,
-): Promise<void> {
-  const bounce = notification['bounce'] as Record<string, unknown> | undefined
-  if (!bounce) return
+async function handleBounce(event: WebhookJobData['event'], rawPayload: Record<string, unknown>): Promise<void> {
+  const providerMessageId = event.messageId ?? ''
+  const sendRow = await requireSendByMessageId(providerMessageId)
 
+  const metadata = (event.metadata ?? {}) as Record<string, unknown>
+  const bounce = (metadata['bounce'] ?? {}) as Record<string, unknown>
   const bounceType = (bounce['bounceType'] as string | undefined)?.toLowerCase()
   const reason = bounceType === 'permanent' ? 'permanent_bounce' : 'transient_bounce'
-  const sesMessageId = extractMessageId(notification)
-  const sendRow = await requireSendByMessageId(sesMessageId)
-
-  const recipients = (bounce['bouncedRecipients'] as Array<{ emailAddress?: string, diagnosticCode?: string }>) ?? []
+  const recipients = extractRecipients(event, 'bounce')
 
   await db.update(emailSends).set({ status: 'bounced', updatedAt: new Date() }).where(eq(emailSends.id, sendRow.id))
 
   await Promise.all(
-    recipients.map(async (r) => {
-      if (!r.emailAddress) return
-      await suppressionService.add(r.emailAddress, reason, bounce['bounceSubType'] as string | undefined)
-      await insertEvent(sendRow.id, sesMessageId, 'bounce', rawPayload, {
+    recipients.map(async (recipient) => {
+      await suppressionService.add(recipient, reason, bounce['bounceSubType'] as string | undefined)
+      await insertEvent(sendRow.id, providerMessageId, 'bounce', rawPayload, {
         bounceType: bounce['bounceType'],
         bounceSubType: bounce['bounceSubType'],
-        diagnosticCode: r.diagnosticCode,
+        recipient,
       })
     }),
   )
 }
 
-async function handleComplaint(
-  notification: Record<string, unknown>,
-  rawPayload: Record<string, unknown>,
-): Promise<void> {
-  const complaint = notification['complaint'] as Record<string, unknown> | undefined
-  if (!complaint) return
-
-  const sesMessageId = extractMessageId(notification)
-  const sendRow = await requireSendByMessageId(sesMessageId)
-
-  const recipients = (complaint['complainedRecipients'] as Array<{ emailAddress?: string }>) ?? []
+async function handleComplaint(event: WebhookJobData['event'], rawPayload: Record<string, unknown>): Promise<void> {
+  const providerMessageId = event.messageId ?? ''
+  const sendRow = await requireSendByMessageId(providerMessageId)
+  const metadata = (event.metadata ?? {}) as Record<string, unknown>
+  const complaint = (metadata['complaint'] ?? {}) as Record<string, unknown>
+  const recipients = extractRecipients(event, 'complaint')
 
   await db.update(emailSends).set({ status: 'complained', updatedAt: new Date() }).where(eq(emailSends.id, sendRow.id))
 
   await Promise.all(
-    recipients.map(async (r) => {
-      if (!r.emailAddress) return
-      await suppressionService.add(r.emailAddress, 'complaint')
-      await insertEvent(sendRow.id, sesMessageId, 'complaint', rawPayload, {
+    recipients.map(async (recipient) => {
+      await suppressionService.add(recipient, 'complaint')
+      await insertEvent(sendRow.id, providerMessageId, 'complaint', rawPayload, {
         feedbackType: complaint['complaintFeedbackType'],
+        recipient,
       })
     }),
   )
 }
 
-async function handleDelivery(
-  notification: Record<string, unknown>,
-  rawPayload: Record<string, unknown>,
-): Promise<void> {
-  const sesMessageId = extractMessageId(notification)
-  const delivery = notification['delivery'] as Record<string, unknown> | undefined
-  const sendRow = await requireSendByMessageId(sesMessageId)
+async function handleDelivery(event: WebhookJobData['event'], rawPayload: Record<string, unknown>): Promise<void> {
+  const providerMessageId = event.messageId ?? ''
+  const sendRow = await requireSendByMessageId(providerMessageId)
+  const metadata = (event.metadata ?? {}) as Record<string, unknown>
+  const delivery = (metadata['delivery'] ?? {}) as Record<string, unknown>
 
   await db.update(emailSends).set({ status: 'delivered', updatedAt: new Date() }).where(eq(emailSends.id, sendRow.id))
 
-  await insertEvent(sendRow.id, sesMessageId, 'delivery', rawPayload, {
-    smtpResponse: delivery?.['smtpResponse'],
-    remoteMtaIp: delivery?.['remoteMtaIp'],
-    processingMs: delivery?.['processingTimeMillis'],
+  await insertEvent(sendRow.id, providerMessageId, 'delivery', rawPayload, {
+    smtpResponse: delivery['smtpResponse'],
+    remoteMtaIp: delivery['remoteMtaIp'],
+    processingMs: delivery['processingTimeMillis'],
   })
 }
 
-async function handleOpen(
-  notification: Record<string, unknown>,
-  rawPayload: Record<string, unknown>,
-): Promise<void> {
-  const open = notification['open'] as Record<string, unknown> | undefined
-  const mail = notification['mail'] as Record<string, unknown> | undefined
-  const userAgent = open?.['userAgent'] as string | undefined
-  const ipAddress = open?.['ipAddress'] as string | undefined
-  const openedAt = open?.['timestamp'] as string | undefined
-  const sentAt = mail?.['timestamp'] as string | undefined
+async function handleOpen(event: WebhookJobData['event'], rawPayload: Record<string, unknown>): Promise<void> {
+  const metadata = (event.metadata ?? {}) as Record<string, unknown>
+  const open = (metadata['open'] ?? {}) as Record<string, unknown>
+  const mail = (metadata['mail'] ?? {}) as Record<string, unknown>
+  const userAgent = open['userAgent'] as string | undefined
+  const ipAddress = open['ipAddress'] as string | undefined
+  const openedAt = open['timestamp'] as string | undefined
+  const sentAt = mail['timestamp'] as string | undefined
 
   if (isBotOpen(userAgent, ipAddress, openedAt, sentAt)) {
     console.log(`[WebhookWorker] Skipping bot open — IP: ${ipAddress}, UA: ${userAgent}, delta: ${openedAt && sentAt ? `${new Date(openedAt).getTime() - new Date(sentAt).getTime()}ms` : 'unknown'}`)
     return
   }
 
-  const sesMessageId = extractMessageId(notification)
-  const sendRow = await requireSendByMessageId(sesMessageId)
+  const providerMessageId = event.messageId ?? ''
+  const sendRow = await requireSendByMessageId(providerMessageId)
   await db.update(emailSends).set({ status: 'opened', updatedAt: new Date() }).where(eq(emailSends.id, sendRow.id))
-  await insertEvent(sendRow.id, sesMessageId, 'open', rawPayload, { ipAddress, userAgent })
+  await insertEvent(sendRow.id, providerMessageId, 'open', rawPayload, { ipAddress, userAgent })
 }
 
-async function handleClick(
-  notification: Record<string, unknown>,
-  rawPayload: Record<string, unknown>,
-): Promise<void> {
-  const sesMessageId = extractMessageId(notification)
-  const click = notification['click'] as Record<string, unknown> | undefined
-  const sendRow = await requireSendByMessageId(sesMessageId)
+async function handleClick(event: WebhookJobData['event'], rawPayload: Record<string, unknown>): Promise<void> {
+  const providerMessageId = event.messageId ?? ''
+  const sendRow = await requireSendByMessageId(providerMessageId)
+  const metadata = (event.metadata ?? {}) as Record<string, unknown>
+  const click = (metadata['click'] ?? {}) as Record<string, unknown>
 
-  await insertEvent(sendRow.id, sesMessageId, 'click', rawPayload, {
-    link: click?.['link'],
-    ipAddress: click?.['ipAddress'],
-    userAgent: click?.['userAgent'],
+  await insertEvent(sendRow.id, providerMessageId, 'click', rawPayload, {
+    link: click['link'],
+    ipAddress: click['ipAddress'],
+    userAgent: click['userAgent'],
   })
 }
 
-// ── bot detection ──────────────────────────────────────────────────────────
+async function handleGeneric(event: WebhookJobData['event'], rawPayload: Record<string, unknown>): Promise<void> {
+  const providerMessageId = event.messageId ?? ''
+  if (!providerMessageId) {
+    return
+  }
+
+  const sendRow = await requireSendByMessageId(providerMessageId)
+  const eventType = toEmailEventType(event.eventType)
+  if (!eventType) {
+    console.warn(`[WebhookWorker] Unsupported generic event type: ${event.eventType}`)
+    return
+  }
+  await insertEvent(sendRow.id, providerMessageId, eventType, rawPayload, event.metadata ?? {})
+}
 
 const GOOGLE_IP_CIDRS: [number, number][] = [
   [ip2int('66.249.0.0'), 16],
@@ -179,7 +178,8 @@ function isGoogleIp(ip: string): boolean {
       const mask = prefix === 0 ? 0 : (~0 << (32 - prefix)) >>> 0
       return (ipInt & mask) === (network & mask)
     })
-  } catch {
+  }
+  catch {
     return false
   }
 }
@@ -187,7 +187,6 @@ function isGoogleIp(ip: string): boolean {
 const BOT_OPEN_TIMING_THRESHOLD_MS = 5_000
 
 function isBotOpen(userAgent?: string, ipAddress?: string, openedAt?: string, sentAt?: string): boolean {
-  // Timing: sub-30s from send is virtually impossible for a human
   if (openedAt && sentAt) {
     const delta = new Date(openedAt).getTime() - new Date(sentAt).getTime()
     if (delta >= 0 && delta < BOT_OPEN_TIMING_THRESHOLD_MS) return true
@@ -195,7 +194,6 @@ function isBotOpen(userAgent?: string, ipAddress?: string, openedAt?: string, se
 
   if (userAgent) {
     const ua = userAgent.toLowerCase()
-    // Apple MPP: bare "Mozilla/5.0" with no platform info
     if (userAgent.trim() === 'Mozilla/5.0') return true
     if (BOT_UA_PATTERNS.some(p => ua.includes(p))) return true
   }
@@ -205,26 +203,70 @@ function isBotOpen(userAgent?: string, ipAddress?: string, openedAt?: string, se
   return false
 }
 
-// ── helpers ────────────────────────────────────────────────────────────────
+function extractRecipients(event: WebhookJobData['event'], mode: 'bounce' | 'complaint'): string[] {
+  const recipients = new Set<string>()
 
-function extractMessageId(notification: Record<string, unknown>): string {
-  return (
-    ((notification['mail'] as Record<string, unknown> | undefined)?.['messageId'] as string | undefined) ?? ''
-  )
+  if (event.recipient) {
+    recipients.add(event.recipient)
+  }
+
+  const metadata = (event.metadata ?? {}) as Record<string, unknown>
+
+  if (mode === 'bounce') {
+    const bounce = (metadata['bounce'] ?? {}) as Record<string, unknown>
+    const bouncedRecipients = (bounce['bouncedRecipients'] as Array<Record<string, unknown>> | undefined) ?? []
+    for (const recipient of bouncedRecipients) {
+      const email = recipient['emailAddress'] as string | undefined
+      if (email) recipients.add(email)
+    }
+  }
+  else {
+    const complaint = (metadata['complaint'] ?? {}) as Record<string, unknown>
+    const complainedRecipients = (complaint['complainedRecipients'] as Array<Record<string, unknown>> | undefined) ?? []
+    for (const recipient of complainedRecipients) {
+      const email = recipient['emailAddress'] as string | undefined
+      if (email) recipients.add(email)
+    }
+  }
+
+  return [...recipients]
 }
 
-async function requireSendByMessageId(sesMessageId: string) {
-  if (!sesMessageId) throw new Error('Empty sesMessageId in notification')
+function toEmailEventType(eventType: string): typeof emailEvents.$inferInsert['eventType'] | null {
+  const normalized = eventType.toLowerCase()
+  const allowed = new Set<typeof emailEvents.$inferInsert['eventType']>([
+    'queued',
+    'suppressed',
+    'submitted',
+    'send',
+    'delivery',
+    'bounce',
+    'complaint',
+    'reject',
+    'open',
+    'click',
+    'unsubscribe',
+  ])
+
+  if (allowed.has(normalized as typeof emailEvents.$inferInsert['eventType'])) {
+    return normalized as typeof emailEvents.$inferInsert['eventType']
+  }
+
+  return null
+}
+
+async function requireSendByMessageId(providerMessageId: string) {
+  if (!providerMessageId) throw new Error('Empty providerMessageId in notification')
 
   const rows = await db
     .select()
     .from(emailSends)
-    .where(eq(emailSends.sesMessageId, sesMessageId))
+    .where(eq(emailSends.providerMessageId, providerMessageId))
     .limit(1)
 
   if (!rows[0]) {
-    console.warn(`[WebhookWorker] No send record found for sesMessageId: ${sesMessageId} — will retry`)
-    throw new Error(`Send record not found for sesMessageId: ${sesMessageId}`)
+    console.warn(`[WebhookWorker] No send record found for providerMessageId: ${providerMessageId} — will retry`)
+    throw new Error(`Send record not found for providerMessageId: ${providerMessageId}`)
   }
 
   console.log(`[WebhookWorker] Matched send record ${rows[0].id} (status: ${rows[0].status})`)
@@ -233,7 +275,7 @@ async function requireSendByMessageId(sesMessageId: string) {
 
 async function insertEvent(
   emailSendId: string,
-  sesMessageId: string,
+  providerMessageId: string,
   eventType: typeof emailEvents.$inferInsert['eventType'],
   rawPayload: Record<string, unknown>,
   metadata: Record<string, unknown>,
@@ -243,7 +285,7 @@ async function insertEvent(
   )
   await db.insert(emailEvents).values({
     emailSendId,
-    sesMessageId,
+    providerMessageId: providerMessageId || null,
     eventType,
     rawPayload,
     metadata: Object.keys(cleanMeta).length ? cleanMeta : null,
@@ -251,8 +293,6 @@ async function insertEvent(
   })
   console.log(`[WebhookWorker] Inserted ${eventType} event for send ${emailSendId}`)
 }
-
-// ── factory ────────────────────────────────────────────────────────────────
 
 export function createWebhookWorker() {
   const worker = new Worker<WebhookJobData>(WEBHOOK_QUEUE_NAME, processWebhookJob, {

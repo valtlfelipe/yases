@@ -31,9 +31,6 @@ docker run -d \
   -p 3000:3000 \
   -e DATABASE_URL=postgres://user:pass@host:5432/db \
   -e REDIS_URL=redis://host:6379 \
-  -e AWS_REGION=us-east-1 \
-  -e AWS_ACCESS_KEY_ID=AKIAxxx \
-  -e AWS_SECRET_ACCESS_KEY=xxx \
   -e BETTER_AUTH_SECRET=xxx \
   -e BETTER_AUTH_URL=https://your-domain.com \
   -e TOKEN_SECRET=xxx \
@@ -43,9 +40,6 @@ docker run -d \
 docker run -d \
   -e DATABASE_URL=postgres://user:pass@host:5432/db \
   -e REDIS_URL=redis://host:6379 \
-  -e AWS_REGION=us-east-1 \
-  -e AWS_ACCESS_KEY_ID=AKIAxxx \
-  -e AWS_SECRET_ACCESS_KEY=xxx \
   ghcr.io/valtlfelipe/yases:latest bun server/workers/index.ts
 ```
 
@@ -58,14 +52,13 @@ docker run -d \
 
 ### 1. Configure Environment
 
-Create the environment file for the server:
+Create the environment file:
 
 ```bash
-mkdir -p apps/server
-cp .env.example apps/server/.env
+cp .env.example .env
 ```
 
-Required environment variables in `apps/server/.env`:
+Required environment variables in `.env`:
 
 ```env
 # Database (will be overridden by docker-compose)
@@ -74,18 +67,18 @@ DATABASE_URL=postgres://email:email@postgres:5432/email_service
 # Redis (will be overridden by docker-compose)
 REDIS_URL=redis://valkey:6379
 
-# AWS SES
-AWS_REGION=us-east-1
-AWS_ACCESS_KEY_ID=AKIAxxxxxxxx
-AWS_SECRET_ACCESS_KEY=xxxxxxxxxx
-
 # Auth
 BETTER_AUTH_SECRET=your-32-character-secret-key-here
 BETTER_AUTH_URL=https://your-domain.com
 
 # Token signing (unsubscribe links, etc.)
 TOKEN_SECRET=your-32-character-token-secret-here
+
+# Credentials encryption key for stored provider credentials
+CREDENTIALS_ENCRYPTION_KEY=your-32-character-key-here
 ```
+
+AWS credentials are configured per provider in the dashboard, not in environment variables.
 
 ### 2. Start the Services
 
@@ -113,24 +106,17 @@ bun run create:admin admin@yourdomain.com mypassword123 "Admin User"
 
 ### 4. Configure AWS SES
 
-Run the AWS infrastructure setup script. Your server must be deployed and publicly accessible before this step:
+Configure SES from the dashboard:
 
-```bash
-bun run setup:aws --webhook-url https://api.yourdomain.com/webhooks/ses
-```
-
-Add the resulting `SES_CONFIGURATION_SET` to your `apps/server/.env` file and restart the containers.
-
-Next, add your sending domain via the dashboard:
-
-1. Open the dashboard and navigate to **Domains**
-2. Click **Add Domain** and enter your domain name
-3. Copy the DNS records shown (DKIM, MAIL FROM, DMARC) and add them to your DNS provider
-4. Once DNS propagates (up to 72 hours), click the **sync** button on the domain row to update its verification status
+1. Open **Settings → Providers** and click **Add Provider**
+2. Select **AWS SES**, add your AWS Access Key ID, Secret Access Key, and region
+3. Test the connection, then click the setup action (**Configure webhooks**) for that provider
+4. Enter your public host (for example `https://api.yourdomain.com`) and run **Setup Webhooks**
+5. Go to **Settings → Domains** and add your sending domain
+6. Copy the DNS records shown (DKIM, MAIL FROM, DMARC) to your DNS provider
+7. After DNS propagation (can take up to 72 hours), click sync on the domain row to refresh verification status
 
 Finally, request production access in AWS Console → SES → Account dashboard (if you're still in sandbox).
-
-See [AWS_SETUP.md](AWS_SETUP.md) for detailed AWS configuration instructions.
 
 ### 5. Generate an API Key
 
@@ -234,22 +220,6 @@ When the recipient is suppressed, the email is recorded but not sent:
 ---
 
 ## Helper Scripts
-
-These scripts help with AWS SES setup and administration.
-
-### `bun run setup:aws`
-
-Sets up AWS SES infrastructure (SNS topic, configuration set, webhook subscription).
-
-```bash
-bun run setup:aws --webhook-url https://api.yourdomain.com/webhooks/ses
-```
-
-| Flag | Default | Description |
-|------|---------|-------------|
-| `--webhook-url` | *(required)* | Public HTTPS URL of your `/webhooks/ses` endpoint |
-| `--config-set` | `email-service` | SES configuration set name |
-| `--topic-name` | `email-service-notifications` | SNS topic name |
 
 ### `bun run create:admin`
 

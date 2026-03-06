@@ -1,31 +1,10 @@
-import { auth } from '../../lib/auth'
-import { desc, count } from 'drizzle-orm'
+import { desc, count, eq } from 'drizzle-orm'
 import { db } from '../../db/index'
-import { emailIdentities } from '../../db/schema'
+import { emailIdentities, providers } from '../../db/schema'
+import { requireApiAuth } from '../../utils/requireApiAuth'
 
 export default defineEventHandler(async (event) => {
-  const headers = event.headers
-
-  let session = await auth.api.getSession({ headers }).catch(() => null)
-
-  if (!session) {
-    const apiKey = headers.get('x-api-key') || headers.get('authorization')?.replace(/^Bearer\s+/i, '')
-    if (apiKey) {
-      const result = await auth.api.verifyApiKey({ body: { key: apiKey } })
-      if (!result.valid) {
-        throw createError({ statusCode: 401, statusMessage: 'Invalid API key' })
-      }
-      // @ts-expect-error - API key authentication creates a minimal session object
-      session = { user: result.key, session: null }
-    }
-  }
-
-  if (!session) {
-    throw createError({
-      statusCode: 401,
-      statusMessage: 'Unauthorized',
-    })
-  }
+  await requireApiAuth(event)
 
   const query = getQuery(event)
   const page = Number(query.page) || 1
@@ -34,8 +13,22 @@ export default defineEventHandler(async (event) => {
 
   const [items, countResult] = await Promise.all([
     db
-      .select()
+      .select({
+        id: emailIdentities.id,
+        domain: emailIdentities.domain,
+        status: emailIdentities.status,
+        dkimTokens: emailIdentities.dkimTokens,
+        mailFromDomain: emailIdentities.mailFromDomain,
+        tenantName: emailIdentities.tenantName,
+        rawAttributes: emailIdentities.rawAttributes,
+        providerId: emailIdentities.providerId,
+        createdAt: emailIdentities.createdAt,
+        updatedAt: emailIdentities.updatedAt,
+        providerName: providers.name,
+        providerDisplayName: providers.displayName,
+      })
       .from(emailIdentities)
+      .leftJoin(providers, eq(emailIdentities.providerId, providers.id))
       .orderBy(desc(emailIdentities.createdAt))
       .limit(limit)
       .offset(offset),

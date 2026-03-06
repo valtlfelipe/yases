@@ -263,10 +263,18 @@
             </p>
           </div>
           <div class="flex justify-end gap-3 pt-2">
-            <UButton variant="soft" color="neutral" @click="showRemoveModal = false">
+            <UButton
+              variant="soft"
+              color="neutral"
+              @click="showRemoveModal = false"
+            >
               Cancel
             </UButton>
-            <UButton color="error" :loading="removing" @click="remove">
+            <UButton
+              color="error"
+              :loading="removing"
+              @click="remove"
+            >
               Remove
             </UButton>
           </div>

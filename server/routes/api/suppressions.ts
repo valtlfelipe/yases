@@ -1,5 +1,5 @@
-import { auth } from '../../lib/auth'
 import { SuppressionService } from '../../services/SuppressionService'
+import { requireApiAuth } from '../../utils/requireApiAuth'
 
 const _suppressionReasons = [
   'permanent_bounce',
@@ -14,28 +14,7 @@ type SuppressionReason = typeof _suppressionReasons[number]
 const suppressionService = new SuppressionService()
 
 export default defineEventHandler(async (event) => {
-  const headers = event.headers
-
-  let session = await auth.api.getSession({ headers }).catch(() => null)
-
-  if (!session) {
-    const apiKey = headers.get('x-api-key') || headers.get('authorization')?.replace(/^Bearer\s+/i, '')
-    if (apiKey) {
-      const result = await auth.api.verifyApiKey({ body: { key: apiKey } })
-      if (!result.valid) {
-        throw createError({ statusCode: 401, statusMessage: 'Invalid API key' })
-      }
-      // @ts-expect-error - API key authentication creates a minimal session object
-      session = { user: result.key, session: null }
-    }
-  }
-
-  if (!session) {
-    throw createError({
-      statusCode: 401,
-      statusMessage: 'Unauthorized',
-    })
-  }
+  await requireApiAuth(event)
 
   const method = event.method
   const emailParam = getRouterParam(event, 'email')

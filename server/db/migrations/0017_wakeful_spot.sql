@@ -1,0 +1,1 @@
+ALTER TABLE "email_identities" DROP COLUMN "dkim_status";
