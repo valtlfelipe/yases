@@ -419,18 +419,6 @@ interface Provider {
   updatedAt: string
 }
 
-interface ProviderWithCredentials extends Provider {
-  credentials: {
-    accessKeyId?: string
-    secretAccessKey?: string
-    region?: string
-    apiKey?: string
-    mailgunApiKey?: string
-    domain?: string
-    mailgunRegion?: string
-  }
-}
-
 const toast = useToast()
 
 const { data, pending, error, refresh: refreshList } = useFetch<Provider[]>('/api/providers', {
@@ -440,14 +428,12 @@ const { data, pending, error, refresh: refreshList } = useFetch<Provider[]>('/ap
 
 // --- Add/Edit Modal ---
 const showProviderModal = ref(false)
-const editingProvider = ref<ProviderWithCredentials | null>(null)
+const editingProvider = ref<Provider | null>(null)
 const savingProvider = ref(false)
 const formError = ref<string | null>(null)
 
 const providerTypes = [
   { label: 'AWS SES', value: 'aws' },
-  { label: 'SendGrid', value: 'sendgrid' },
-  { label: 'Mailgun', value: 'mailgun' },
 ]
 
 const awsRegions = [
@@ -522,25 +508,20 @@ function openEditModal(provider: Provider) {
     return
   }
 
-  // Fetch full provider with credentials
-  $fetch<ProviderWithCredentials>(`/api/providers/${provider.id}`, {
-    credentials: 'include',
-  }).then((fullProvider) => {
-    editingProvider.value = fullProvider
-    formData.name = fullProvider.name
-    formData.displayName = fullProvider.displayName
-    formData.credentials = {
-      accessKeyId: fullProvider.credentials.accessKeyId || '',
-      secretAccessKey: fullProvider.credentials.secretAccessKey || '',
-      region: fullProvider.credentials.region || 'us-east-1',
-      apiKey: fullProvider.credentials.apiKey || '',
-      mailgunApiKey: fullProvider.credentials.mailgunApiKey || '',
-      domain: fullProvider.credentials.domain || '',
-      mailgunRegion: fullProvider.credentials.mailgunRegion || 'us',
-    }
-    formError.value = null
-    showProviderModal.value = true
-  })
+  editingProvider.value = provider
+  formData.name = provider.name
+  formData.displayName = provider.displayName
+  formData.credentials = {
+    accessKeyId: '',
+    secretAccessKey: '',
+    region: 'us-east-1',
+    apiKey: '',
+    mailgunApiKey: '',
+    domain: '',
+    mailgunRegion: 'us',
+  }
+  formError.value = null
+  showProviderModal.value = true
 }
 
 function closeProviderModal() {

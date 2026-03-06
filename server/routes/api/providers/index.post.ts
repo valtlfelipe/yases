@@ -1,9 +1,10 @@
 import { z } from 'zod'
 import { ProviderService } from '../../../services/ProviderService'
 import type { ProviderType, ProviderCredentials } from '../../../lib/providers'
+import { requireApiAuth } from '../../../utils/requireApiAuth'
 
 const createProviderSchema = z.object({
-  name: z.enum(['aws', 'sendgrid', 'mailgun']),
+  name: z.string().min(1),
   displayName: z.string().min(1),
   credentials: z.object({
     accessKeyId: z.string().optional(),
@@ -19,6 +20,8 @@ const createProviderSchema = z.object({
 const providerService = new ProviderService()
 
 export default defineEventHandler(async (event) => {
+  await requireApiAuth(event)
+
   const body = await readBody(event)
   const parsed = createProviderSchema.safeParse(body)
 
@@ -33,7 +36,17 @@ export default defineEventHandler(async (event) => {
   const { name, displayName, credentials, settings } = parsed.data
 
   // Validate credentials before saving
-  const { getProvider } = await import('../../../lib/providers')
+  const { getProvider, getProviderTypes } = await import('../../../lib/providers')
+  const supportedProviders = getProviderTypes()
+
+  if (!supportedProviders.includes(name as ProviderType)) {
+    throw createError({
+      statusCode: 400,
+      message: `Unsupported provider type: ${name}`,
+      data: { supportedProviders },
+    })
+  }
+
   const providerInstance = getProvider(name as ProviderType)
   const testResult = await providerInstance.testConnection(credentials as ProviderCredentials)
 

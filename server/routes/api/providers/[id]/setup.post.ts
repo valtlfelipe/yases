@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { ProviderLockedActiveError, ProviderService } from '../../../../services/ProviderService'
+import { requireApiAuth } from '../../../../utils/requireApiAuth'
 
 const setupSchema = z.object({
   webhookUrl: z.string().url(),
@@ -8,6 +9,8 @@ const setupSchema = z.object({
 const providerService = new ProviderService()
 
 export default defineEventHandler(async (event) => {
+  await requireApiAuth(event)
+
   const id = getRouterParam(event, 'id')
 
   if (!id) {

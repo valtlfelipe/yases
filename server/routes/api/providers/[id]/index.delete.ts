@@ -1,8 +1,11 @@
 import { ProviderHasDomainsError, ProviderService } from '../../../../services/ProviderService'
+import { requireApiAuth } from '../../../../utils/requireApiAuth'
 
 const providerService = new ProviderService()
 
 export default defineEventHandler(async (event) => {
+  await requireApiAuth(event)
+
   const id = getRouterParam(event, 'id')
 
   if (!id) {

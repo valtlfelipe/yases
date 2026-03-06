@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { ProviderLockedActiveError, ProviderService } from '../../../../services/ProviderService'
 import type { ProviderCredentials } from '../../../../lib/providers'
+import { requireApiAuth } from '../../../../utils/requireApiAuth'
 
 const updateProviderSchema = z.object({
   credentials: z
@@ -20,6 +21,8 @@ const updateProviderSchema = z.object({
 const providerService = new ProviderService()
 
 export default defineEventHandler(async (event) => {
+  await requireApiAuth(event)
+
   const id = getRouterParam(event, 'id')
 
   if (!id) {

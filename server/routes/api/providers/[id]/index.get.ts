@@ -1,8 +1,11 @@
 import { ProviderService } from '../../../../services/ProviderService'
+import { requireApiAuth } from '../../../../utils/requireApiAuth'
 
 const providerService = new ProviderService()
 
 export default defineEventHandler(async (event) => {
+  await requireApiAuth(event)
+
   const id = getRouterParam(event, 'id')
 
   if (!id) {
@@ -25,7 +28,6 @@ export default defineEventHandler(async (event) => {
     id: provider.id,
     name: provider.name,
     displayName: provider.displayName,
-    credentials: provider.credentials, // Return credentials for client-side use
     settings: provider.settings,
     isActive: provider.isActive,
     createdAt: provider.createdAt,

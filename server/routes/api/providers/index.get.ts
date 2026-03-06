@@ -1,8 +1,11 @@
 import { ProviderService } from '../../../services/ProviderService'
+import { requireApiAuth } from '../../../utils/requireApiAuth'
 
 const providerService = new ProviderService()
 
 export default defineEventHandler(async (event) => {
+  await requireApiAuth(event)
+
   const providers = await providerService.list()
 
   // Don't return credentials in list
