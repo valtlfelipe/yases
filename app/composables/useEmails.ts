@@ -8,7 +8,7 @@ interface EmailSend {
   replyTo: string | null
   status: string
   jobId: string | null
-  sesMessageId: string | null
+  providerMessageId: string | null
   attempts: number
   lastError: string | null
   createdAt: string

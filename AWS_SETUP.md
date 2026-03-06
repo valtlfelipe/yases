@@ -25,6 +25,7 @@ This is needed to setup SES sending and webhooks, as managing domains and sendin
             "Sid": "SESSetup",
             "Effect": "Allow",
             "Action": [
+                "ses:GetAccount",
                 "ses:CreateConfigurationSet",
                 "ses:GetConfigurationSet",
                 "ses:DeleteConfigurationSet",
@@ -48,7 +49,8 @@ This is needed to setup SES sending and webhooks, as managing domains and sendin
                 "sns:GetTopicAttributes",
                 "sns:SetTopicAttributes",
                 "sns:Subscribe",
-                "sns:ListSubscriptionsByTopic"
+                "sns:ListSubscriptionsByTopic",
+                "SNS:DeleteTopic"
             ],
             "Resource": "*"
         },

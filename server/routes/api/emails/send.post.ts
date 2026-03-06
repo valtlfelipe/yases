@@ -27,7 +27,7 @@ const sendSchema = z
 async function getIdentity(fromAddress: string) {
   const domain = extractEmail(fromAddress).split('@')[1]!
   const rows = await db
-    .select({ status: emailIdentities.status, tenantName: emailIdentities.tenantName })
+    .select({ status: emailIdentities.status, tenantName: emailIdentities.tenantName, providerId: emailIdentities.providerId })
     .from(emailIdentities)
     .where(eq(emailIdentities.domain, domain))
     .limit(1)
@@ -184,9 +184,10 @@ export default defineEventHandler(async (event) => {
       html,
       text,
       replyTo,
-      tenantName: identity.tenantName ?? undefined,
+      tenantName: identity?.tenantName ?? undefined,
       unsubscribeUrl,
       enqueuedAt: new Date().toISOString(),
+      providerId: identity?.providerId ?? undefined,
     },
     { jobId: send.id },
   )

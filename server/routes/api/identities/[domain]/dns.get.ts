@@ -1,8 +1,10 @@
 import { auth } from '../../../../lib/auth'
 import { db } from '../../../../db/index'
 import { emailIdentities } from '../../../../db/schema'
-import { env } from '../../../../lib/env'
 import { eq } from 'drizzle-orm'
+import { ProviderService } from '../../../../services/ProviderService'
+
+const providerService = new ProviderService()
 
 export default defineEventHandler(async (event) => {
   const headers = event.headers
@@ -30,22 +32,12 @@ export default defineEventHandler(async (event) => {
 
   if (!rows[0]) throw createError({ statusCode: 404, statusMessage: 'Identity not found' })
 
-  const { dkimTokens, mailFromDomain } = rows[0]
+  const { dkimTokens, mailFromDomain, providerId } = rows[0]
+  const provider = await providerService.getInstanceById(providerId)
 
-  return {
-    dkim: (dkimTokens ?? []).map(t => ({
-      name: `${t}._domainkey.${domain}`,
-      type: 'CNAME',
-      value: `${t}.dkim.amazonses.com`,
-    })),
-    mailFrom: mailFromDomain
-      ? [
-          { name: mailFromDomain, type: 'MX', value: `10 feedback-smtp.${env.AWS_REGION}.amazonses.com` },
-          { name: mailFromDomain, type: 'TXT', value: `v=spf1 include:amazonses.com ~all` },
-        ]
-      : [],
-    dmarc: [
-      { name: `_dmarc.${domain}`, type: 'TXT', value: `v=DMARC1; p=quarantine; rua=mailto:dmarc@${domain}` },
-    ],
-  }
+  return provider.getDomainDns({
+    domain,
+    dkimTokens,
+    mailFromDomain,
+  })
 })

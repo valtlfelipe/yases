@@ -1,7 +1,7 @@
 import { auth } from '../../lib/auth'
-import { desc, count } from 'drizzle-orm'
+import { desc, count, eq } from 'drizzle-orm'
 import { db } from '../../db/index'
-import { emailIdentities } from '../../db/schema'
+import { emailIdentities, providers } from '../../db/schema'
 
 export default defineEventHandler(async (event) => {
   const headers = event.headers
@@ -34,8 +34,22 @@ export default defineEventHandler(async (event) => {
 
   const [items, countResult] = await Promise.all([
     db
-      .select()
+      .select({
+        id: emailIdentities.id,
+        domain: emailIdentities.domain,
+        status: emailIdentities.status,
+        dkimTokens: emailIdentities.dkimTokens,
+        mailFromDomain: emailIdentities.mailFromDomain,
+        tenantName: emailIdentities.tenantName,
+        rawAttributes: emailIdentities.rawAttributes,
+        providerId: emailIdentities.providerId,
+        createdAt: emailIdentities.createdAt,
+        updatedAt: emailIdentities.updatedAt,
+        providerName: providers.name,
+        providerDisplayName: providers.displayName,
+      })
       .from(emailIdentities)
+      .leftJoin(providers, eq(emailIdentities.providerId, providers.id))
       .orderBy(desc(emailIdentities.createdAt))
       .limit(limit)
       .offset(offset),

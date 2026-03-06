@@ -97,6 +97,7 @@ const nav = [
   { to: '/emails', label: 'Emails', icon: 'i-heroicons-envelope' },
   { to: '/suppressions', label: 'Suppressions', icon: 'i-heroicons-no-symbol' },
   { to: '/domains', label: 'Domains', icon: 'i-heroicons-globe-alt' },
+  { to: '/providers', label: 'Providers', icon: 'i-heroicons-cloud' },
   { to: '/settings', label: 'Settings', icon: 'i-heroicons-cog-6-tooth' },
 ]
 
