@@ -1,4 +1,3 @@
-import { auth } from '../../../lib/auth'
 import { eq } from 'drizzle-orm'
 import { db } from '../../../db/index'
 import { emailSends, emailIdentities, emailEvents } from '../../../db/schema'
@@ -6,6 +5,7 @@ import { EmailValidationService } from '../../../services/EmailValidationService
 import { SuppressionService } from '../../../services/SuppressionService'
 import { emailQueue } from '../../../queue/index'
 import { extractEmail, isValidEmailField } from '../../../utils/email'
+import { requireApiAuth } from '../../../utils/requireApiAuth'
 import { signUnsubscribeToken } from '../../../lib/unsubscribeToken'
 import { env } from '../../../lib/env'
 import { z } from 'zod'
@@ -37,30 +37,8 @@ async function getIdentity(fromAddress: string) {
 const validationService = new EmailValidationService()
 const suppressionService = new SuppressionService()
 
-type Session = Awaited<ReturnType<typeof auth.api.getSession>>
-
 export default defineEventHandler(async (event) => {
-  const headers = event.headers
-
-  let session: Session | null = await auth.api.getSession({ headers }).catch(() => null)
-
-  if (!session) {
-    const apiKey = headers.get('x-api-key') || headers.get('authorization')?.replace(/^Bearer\s+/i, '')
-    if (apiKey) {
-      const result = await auth.api.verifyApiKey({ body: { key: apiKey } })
-      if (!result.valid) {
-        throw createError({ statusCode: 401, statusMessage: 'Invalid API key' })
-      }
-      session = { user: result.key, session: null } as unknown as Session
-    }
-  }
-
-  if (!session) {
-    throw createError({
-      statusCode: 401,
-      statusMessage: 'Unauthorized',
-    })
-  }
+  await requireApiAuth(event)
 
   const body = await readBody(event)
   const parsed = sendSchema.safeParse(body)
@@ -70,7 +48,8 @@ export default defineEventHandler(async (event) => {
     return { error: 'Validation failed', details: parsed.error.flatten() }
   }
 
-  let { to, from, subject, html, text, replyTo } = parsed.data
+  const { to, from, subject, replyTo } = parsed.data
+  let { html, text } = parsed.data
   const { type } = parsed.data
   let unsubscribeUrl: string | undefined
   const toEmail = extractEmail(to)
