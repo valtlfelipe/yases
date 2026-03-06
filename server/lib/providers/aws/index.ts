@@ -27,11 +27,16 @@ import type {
 import { createSesClient, getAccountId, validateAwsCredentials } from './credentials'
 import { setupAwsAccount, teardownAwsAccount } from './setup'
 import { parseAwsWebhook } from './webhook'
-import { env } from '../../env'
 
 export interface AwsProviderSettings {
   configSetName?: string
   topicArn?: string
+}
+
+type AwsCredentials = ProviderCredentials & {
+  accessKeyId: string
+  secretAccessKey: string
+  region: string
 }
 
 export class AWSProvider implements IProvider {
@@ -98,8 +103,7 @@ export class AWSProvider implements IProvider {
   async send(params: SendEmailParams): Promise<SendEmailResult> {
     const client = this.getClient()
 
-    // Use config set from settings, or fall back to env
-    const configSetName = this.settings.configSetName || env.SES_CONFIGURATION_SET
+    const configSetName = this.settings.configSetName
 
     const input: SendEmailCommandInput = {
       FromEmailAddress: params.from,
@@ -137,10 +141,9 @@ export class AWSProvider implements IProvider {
 
   async setupDomain(params: { domain: string, mailFromSubdomain: string }): Promise<DomainSetupResult> {
     const client = this.getClient()
-    const region = this.credentials?.region || env.AWS_REGION
-    const accountId = this.credentials
-      ? await getAccountId(this.credentials)
-      : await this.getEnvAccountId(region)
+    const credentials = this.requireCredentials()
+    const region = credentials.region
+    const accountId = await getAccountId(credentials)
     const domain = params.domain
     const mailFromDomain = `${params.mailFromSubdomain}.${domain}`
 
@@ -180,7 +183,7 @@ export class AWSProvider implements IProvider {
       if (err.name !== 'AlreadyExistsException') throw err
     })
 
-    const configSetName = this.settings.configSetName || env.SES_CONFIGURATION_SET
+    const configSetName = this.settings.configSetName
     if (configSetName) {
       await client.send(
         new CreateTenantResourceAssociationCommand({
@@ -220,7 +223,8 @@ export class AWSProvider implements IProvider {
     dkimTokens?: string[] | null
     mailFromDomain?: string | null
   }): Promise<DomainDnsRecords> {
-    const region = this.credentials?.region || env.AWS_REGION
+    const credentials = this.requireCredentials()
+    const region = credentials.region
     const { domain, dkimTokens, mailFromDomain } = params
 
     return {
@@ -243,17 +247,16 @@ export class AWSProvider implements IProvider {
 
   async deleteDomain(params: { domain: string, tenantName?: string | null }): Promise<void> {
     const client = this.getClient()
-    const region = this.credentials?.region || env.AWS_REGION
-    const accountId = this.credentials
-      ? await getAccountId(this.credentials)
-      : await this.getEnvAccountId(region)
+    const credentials = this.requireCredentials()
+    const region = credentials.region
+    const accountId = await getAccountId(credentials)
 
     const ignoreNotFound = (err: unknown) => {
       if ((err as { name?: string }).name !== 'NotFoundException') throw err
     }
 
     if (params.tenantName) {
-      const configSetName = this.settings.configSetName || env.SES_CONFIGURATION_SET
+      const configSetName = this.settings.configSetName
       if (configSetName) {
         await client.send(new DeleteTenantResourceAssociationCommand({
           TenantName: params.tenantName,
@@ -387,18 +390,7 @@ export class AWSProvider implements IProvider {
   }
 
   private getClient(): SESv2Client {
-    if (this.credentials) {
-      return createSesClient(this.credentials)
-    }
-
-    // Fallback to env credentials
-    return new SESv2Client({
-      region: env.AWS_REGION,
-      credentials: {
-        accessKeyId: env.AWS_ACCESS_KEY_ID,
-        secretAccessKey: env.AWS_SECRET_ACCESS_KEY,
-      },
-    })
+    return createSesClient(this.requireCredentials())
   }
 
   private domainToTenantName(domain: string): string {
@@ -424,19 +416,16 @@ export class AWSProvider implements IProvider {
     return `arn:aws:ses:${region}:${accountId}:configuration-set/${name}`
   }
 
-  private async getEnvAccountId(region: string): Promise<string> {
-    const { STSClient, GetCallerIdentityCommand } = await import('@aws-sdk/client-sts')
-    const stsClient = new STSClient({
-      region,
-      credentials: {
-        accessKeyId: env.AWS_ACCESS_KEY_ID,
-        secretAccessKey: env.AWS_SECRET_ACCESS_KEY,
-      },
-    })
-    const { Account } = await stsClient.send(new GetCallerIdentityCommand({}))
-    if (!Account) {
-      throw new Error('STS returned no Account ID')
+  private requireCredentials(): AwsCredentials {
+    const credentials = this.credentials
+    if (!credentials) {
+      throw new Error('Provider credentials are required')
     }
-    return Account
+
+    if (!credentials.accessKeyId || !credentials.secretAccessKey || !credentials.region) {
+      throw new Error('Missing AWS credentials')
+    }
+
+    return credentials as AwsCredentials
   }
 }
