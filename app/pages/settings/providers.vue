@@ -83,6 +83,9 @@
                     Status
                   </th>
                   <th class="px-4 py-3 text-left text-xs font-medium text-stone-500 dark:text-stone-400 uppercase tracking-wider">
+                    Domains
+                  </th>
+                  <th class="px-4 py-3 text-left text-xs font-medium text-stone-500 dark:text-stone-400 uppercase tracking-wider">
                     Added
                   </th>
                   <th class="px-4 py-3" />
@@ -105,7 +108,7 @@
                       <div>
                         <span class="text-sm font-medium text-stone-700 dark:text-stone-300">{{ item.displayName }}</span>
                         <p class="text-xs text-stone-500 dark:text-stone-400">
-                          {{ item.name }}
+                          {{ getProviderLabel(item.name) }}
                         </p>
                       </div>
                     </div>
@@ -117,6 +120,9 @@
                     >
                       {{ item.isActive ? 'Active' : 'Pending Setup' }}
                     </UBadge>
+                  </td>
+                  <td class="px-4 py-3">
+                    <span class="text-sm text-stone-600 dark:text-stone-300">{{ item.domainCount ?? 0 }}</span>
                   </td>
                   <td class="px-4 py-3">
                     <span class="text-sm text-stone-500">{{ formatDate(item.createdAt) }}</span>
@@ -135,6 +141,19 @@
                             name="i-heroicons-signal"
                             class="w-4 h-4"
                             :class="{ 'animate-pulse': testingProvider === item.id }"
+                          />
+                        </UButton>
+                      </UTooltip>
+                      <UTooltip text="View details">
+                        <UButton
+                          size="xs"
+                          variant="ghost"
+                          color="neutral"
+                          @click="openDetailsModal(item)"
+                        >
+                          <UIcon
+                            name="i-heroicons-information-circle"
+                            class="w-4 h-4"
                           />
                         </UButton>
                       </UTooltip>
@@ -380,6 +399,78 @@
       </template>
     </UModal>
 
+    <!-- Provider Details Modal -->
+    <UModal
+      v-model:open="showDetailsModal"
+      :ui="{ content: 'max-w-lg' }"
+    >
+      <template #content>
+        <div class="p-6 space-y-5">
+          <div>
+            <h3 class="text-lg font-semibold text-stone-900 dark:text-stone-100">
+              Provider Details
+            </h3>
+            <p class="text-sm text-stone-500 dark:text-stone-400 mt-1">
+              Basic configuration data for this provider. Secret keys are not shown.
+            </p>
+          </div>
+
+          <div
+            v-if="detailsProvider"
+            class="space-y-3"
+          >
+            <div class="grid grid-cols-3 gap-3 text-sm">
+              <span class="text-stone-500 dark:text-stone-400">Display Name</span>
+              <span class="col-span-2 text-stone-800 dark:text-stone-200 font-medium">{{ detailsProvider.displayName }}</span>
+            </div>
+            <div class="grid grid-cols-3 gap-3 text-sm">
+              <span class="text-stone-500 dark:text-stone-400">Provider</span>
+              <span class="col-span-2">
+                <span class="inline-flex items-center gap-2 text-stone-700 dark:text-stone-300">
+                  <UIcon
+                    :name="getProviderBrandIcon(detailsProvider.name)"
+                    class="w-4 h-4"
+                  />
+                  {{ getProviderLabel(detailsProvider.name) }}
+                </span>
+              </span>
+            </div>
+            <div class="grid grid-cols-3 gap-3 text-sm">
+              <span class="text-stone-500 dark:text-stone-400">Status</span>
+              <span class="col-span-2">
+                <UBadge
+                  :color="detailsProvider.isActive ? 'success' : 'warning'"
+                  variant="soft"
+                >
+                  {{ detailsProvider.isActive ? 'Active' : 'Pending Setup' }}
+                </UBadge>
+              </span>
+            </div>
+            <div class="grid grid-cols-3 gap-3 text-sm">
+              <span class="text-stone-500 dark:text-stone-400">Created</span>
+              <span class="col-span-2 text-stone-700 dark:text-stone-300">{{ formatDate(detailsProvider.createdAt) }}</span>
+            </div>
+            <div class="space-y-2">
+              <p class="text-sm text-stone-500 dark:text-stone-400">
+                Settings
+              </p>
+              <pre class="text-xs bg-stone-50 dark:bg-stone-800/60 border border-stone-200 dark:border-stone-700 rounded-lg p-3 whitespace-pre-wrap text-stone-700 dark:text-stone-300">{{ formatSettings(detailsProvider.settings) }}</pre>
+            </div>
+          </div>
+
+          <div class="flex justify-end pt-2">
+            <UButton
+              variant="ghost"
+              color="neutral"
+              @click="showDetailsModal = false"
+            >
+              Close
+            </UButton>
+          </div>
+        </div>
+      </template>
+    </UModal>
+
     <!-- Delete confirm modal -->
     <UModal v-model:open="showDeleteModal">
       <template #content>
@@ -420,6 +511,8 @@ interface Provider {
   name: string
   displayName: string
   isActive: boolean
+  settings?: Record<string, unknown>
+  domainCount?: number
   createdAt: string
   updatedAt: string
 }
@@ -693,6 +786,15 @@ async function runSetup() {
   }
 }
 
+// --- Details Modal ---
+const showDetailsModal = ref(false)
+const detailsProvider = ref<Provider | null>(null)
+
+function openDetailsModal(provider: Provider) {
+  detailsProvider.value = provider
+  showDetailsModal.value = true
+}
+
 // --- Delete ---
 const showDeleteModal = ref(false)
 const providerToDelete = ref<Provider | null>(null)
@@ -729,13 +831,35 @@ async function deleteProvider() {
 function getProviderIcon(name: string) {
   switch (name) {
     case 'aws':
-      return 'i-heroicons-cloud'
+      return 'i-simple-icons-amazonaws'
     case 'sendgrid':
-      return 'i-heroicons-paper-airplane'
+      return 'i-simple-icons-sendgrid'
     case 'mailgun':
-      return 'i-heroicons-envelope'
+      return 'i-simple-icons-mailgun'
     default:
       return 'i-heroicons-cloud'
+  }
+}
+
+function getProviderBrandIcon(name: string) {
+  switch (name) {
+    case 'aws':
+      return 'i-simple-icons-amazonaws'
+    default:
+      return getProviderIcon(name)
+  }
+}
+
+function getProviderLabel(name: string) {
+  switch (name) {
+    case 'aws':
+      return 'AWS SES'
+    case 'sendgrid':
+      return 'SendGrid'
+    case 'mailgun':
+      return 'Mailgun'
+    default:
+      return name
   }
 }
 
@@ -745,5 +869,33 @@ function formatDate(dateStr: string) {
     day: 'numeric',
     year: 'numeric',
   })
+}
+
+function redactSecrets(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map(redactSecrets)
+  }
+
+  if (value && typeof value === 'object') {
+    const redacted: Record<string, unknown> = {}
+    for (const [key, childValue] of Object.entries(value as Record<string, unknown>)) {
+      if (/(secret|token|password|private.?key|access.?key|api.?key)/i.test(key)) {
+        redacted[key] = '[REDACTED]'
+      }
+      else {
+        redacted[key] = redactSecrets(childValue)
+      }
+    }
+    return redacted
+  }
+
+  return value
+}
+
+function formatSettings(settings: Record<string, unknown> | undefined) {
+  if (!settings || Object.keys(settings).length === 0) {
+    return 'No settings configured.'
+  }
+  return JSON.stringify(redactSecrets(settings), null, 2)
 }
 </script>

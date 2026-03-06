@@ -244,11 +244,12 @@ export class ProviderService {
       credentials: provider.credentials,
     })
 
-    // Save the settings returned from setup and set provider to active
-    if (result.success && result.details) {
+    // Save provider setup data, including the full webhook URL, and activate provider.
+    if (result.success) {
       const newSettings = {
         ...provider.settings,
-        ...result.details,
+        ...(result.details || {}),
+        webhookUrl,
       }
       await this.update(id, { settings: newSettings, isActive: true })
     }
