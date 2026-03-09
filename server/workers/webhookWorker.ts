@@ -1,5 +1,5 @@
 import { Worker, type Job } from 'bullmq'
-import { and, eq, isNull, or } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import { db } from '../db/index'
 import { emailEvents, emailSends } from '../db/schema'
 import { SuppressionService } from '../services/SuppressionService'
@@ -261,18 +261,18 @@ async function requireSendByMessageId(providerMessageId: string, providerType?: 
 
   const scopedRows = providerId
     ? await db
-      .select()
-      .from(emailSends)
-      .where(and(
-        eq(emailSends.providerMessageId, providerMessageId),
-        eq(emailSends.providerId, providerId),
-      ))
-      .limit(1)
+        .select()
+        .from(emailSends)
+        .where(and(
+          eq(emailSends.providerMessageId, providerMessageId),
+          eq(emailSends.providerId, providerId),
+        ))
+        .limit(1)
     : await db
-      .select()
-      .from(emailSends)
-      .where(eq(emailSends.providerMessageId, providerMessageId))
-      .limit(1)
+        .select()
+        .from(emailSends)
+        .where(eq(emailSends.providerMessageId, providerMessageId))
+        .limit(1)
   const rows = scopedRows
 
   if (!rows[0]) {

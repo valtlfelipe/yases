@@ -245,7 +245,10 @@
             />
           </UFormField>
 
-          <template v-for="field in selectedCredentialFields" :key="field.key">
+          <template
+            v-for="field in selectedCredentialFields"
+            :key="field.key"
+          >
             <UFormField :label="field.label">
               <USelect
                 v-if="field.type === 'select'"

@@ -1,4 +1,4 @@
-import {
+import type {
   SESv2Client,
   SendEmailCommand,
   type SendEmailCommandInput,
@@ -11,8 +11,7 @@ import {
   DeleteTenantCommand,
   DeleteTenantResourceAssociationCommand,
   GetTenantCommand,
-  GetReputationEntityCommand,
-} from '@aws-sdk/client-sesv2'
+  GetReputationEntityCommand } from '@aws-sdk/client-sesv2'
 import type {
   IProvider,
   ProviderInitParams,

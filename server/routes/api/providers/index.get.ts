@@ -14,16 +14,16 @@ export default defineEventHandler(async (event) => {
 
   const domainsByProvider = providerIds.length > 0
     ? await db
-      .select({
-        providerId: emailIdentities.providerId,
-        domainCount: sql<number>`count(*)`,
-      })
-      .from(emailIdentities)
-      .where(and(
-        isNotNull(emailIdentities.providerId),
-        inArray(emailIdentities.providerId, providerIds),
-      ))
-      .groupBy(emailIdentities.providerId)
+        .select({
+          providerId: emailIdentities.providerId,
+          domainCount: sql<number>`count(*)`,
+        })
+        .from(emailIdentities)
+        .where(and(
+          isNotNull(emailIdentities.providerId),
+          inArray(emailIdentities.providerId, providerIds),
+        ))
+        .groupBy(emailIdentities.providerId)
     : []
 
   const domainCountMap = new Map<string, number>(
