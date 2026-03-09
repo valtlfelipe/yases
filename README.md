@@ -43,6 +43,81 @@ docker run -d \
   ghcr.io/valtlfelipe/yases:latest bun server/workers/index.ts
 ```
 
+### AWS IAM
+
+Create this policy and attach them to your IAM user that will be used by YASES.
+
+This is needed to setup SES sending and webhooks, as managing domains and sending email.
+
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "SESSetup",
+            "Effect": "Allow",
+            "Action": [
+                "ses:CreateConfigurationSet",
+                "ses:GetConfigurationSet",
+                "ses:DeleteConfigurationSet",
+                "ses:CreateConfigurationSetEventDestination",
+                "ses:GetConfigurationSetEventDestinations",
+                "ses:UpdateConfigurationSetEventDestination",
+                "ses:CreateEmailIdentity",
+                "ses:GetEmailIdentity",
+                "ses:DeleteEmailIdentity",
+                "ses:PutEmailIdentityDkimAttributes",
+                "ses:PutEmailIdentityDkimSigningAttributes",
+                "ses:PutEmailIdentityMailFromAttributes"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Sid": "SNSSetup",
+            "Effect": "Allow",
+            "Action": [
+                "sns:CreateTopic",
+                "sns:GetTopicAttributes",
+                "sns:SetTopicAttributes",
+                "sns:Subscribe",
+                "sns:ListSubscriptionsByTopic"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Sid": "SESTenants",
+            "Effect": "Allow",
+            "Action": [
+                "ses:CreateTenant",
+                "ses:GetTenant",
+                "ses:DeleteTenant",
+                "ses:CreateTenantResourceAssociation",
+                "ses:DeleteTenantResourceAssociation",
+                "ses:GetReputationEntity"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Sid": "STSGetAccountId",
+            "Effect": "Allow",
+            "Action": [
+                "sts:GetCallerIdentity"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Sid": "SESSendEmail",
+            "Effect": "Allow",
+            "Action": [
+                "ses:SendEmail",
+                "ses:SendRawEmail"
+            ],
+            "Resource": "*"
+        }
+    ]
+}
+```
+
 ### Prerequisites
 
 - A server with a public HTTPS URL (required for AWS SNS webhooks)

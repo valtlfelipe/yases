@@ -9,6 +9,7 @@ import {
 import {
   SNSClient,
   CreateTopicCommand,
+  GetTopicAttributesCommand,
   SetTopicAttributesCommand,
   SubscribeCommand,
   ListSubscriptionsByTopicCommand,
@@ -66,9 +67,14 @@ export async function setupAwsAccount(params: {
     if (error.name !== 'AlreadyExists') {
       throw err
     }
-    // Topic already exists, reconstruct ARN
-    const accountId = accessKeyId.substring(0, 12)
-    topicArn = `arn:aws:sns:${region}:${accountId}:${topicName}`
+    // Topic already exists, retrieve its ARN via GetTopicAttributes
+    const attrResult = await snsClient.send(
+      new GetTopicAttributesCommand({ TopicArn: `arn:aws:sns:${region}:*:${topicName}` }),
+    )
+    if (!attrResult.Attributes?.TopicArn) {
+      return { success: false, details: { error: 'Failed to retrieve existing topic ARN' } }
+    }
+    topicArn = attrResult.Attributes.TopicArn
   }
 
   // Step 2: Set topic policy so SES can publish to it
