@@ -1,11 +1,11 @@
-import { auth } from '../../../lib/auth'
 import { eq } from 'drizzle-orm'
 import { db } from '../../../db/index'
-import { emailSends, emailIdentities, emailEvents } from '../../../db/schema'
+import { emailSends, emailIdentities, emailEvents, providers } from '../../../db/schema'
 import { EmailValidationService } from '../../../services/EmailValidationService'
 import { SuppressionService } from '../../../services/SuppressionService'
 import { emailQueue } from '../../../queue/index'
 import { extractEmail, isValidEmailField } from '../../../utils/email'
+import { requireApiAuth } from '../../../utils/requireApiAuth'
 import { signUnsubscribeToken } from '../../../lib/unsubscribeToken'
 import { env } from '../../../lib/env'
 import { z } from 'zod'
@@ -27,8 +27,14 @@ const sendSchema = z
 async function getIdentity(fromAddress: string) {
   const domain = extractEmail(fromAddress).split('@')[1]!
   const rows = await db
-    .select({ status: emailIdentities.status, tenantName: emailIdentities.tenantName })
+    .select({
+      status: emailIdentities.status,
+      tenantName: emailIdentities.tenantName,
+      providerId: emailIdentities.providerId,
+      providerType: providers.name,
+    })
     .from(emailIdentities)
+    .leftJoin(providers, eq(emailIdentities.providerId, providers.id))
     .where(eq(emailIdentities.domain, domain))
     .limit(1)
   return rows[0] ?? null
@@ -37,30 +43,8 @@ async function getIdentity(fromAddress: string) {
 const validationService = new EmailValidationService()
 const suppressionService = new SuppressionService()
 
-type Session = Awaited<ReturnType<typeof auth.api.getSession>>
-
 export default defineEventHandler(async (event) => {
-  const headers = event.headers
-
-  let session: Session | null = await auth.api.getSession({ headers }).catch(() => null)
-
-  if (!session) {
-    const apiKey = headers.get('x-api-key') || headers.get('authorization')?.replace(/^Bearer\s+/i, '')
-    if (apiKey) {
-      const result = await auth.api.verifyApiKey({ body: { key: apiKey } })
-      if (!result.valid) {
-        throw createError({ statusCode: 401, statusMessage: 'Invalid API key' })
-      }
-      session = { user: result.key, session: null } as unknown as Session
-    }
-  }
-
-  if (!session) {
-    throw createError({
-      statusCode: 401,
-      statusMessage: 'Unauthorized',
-    })
-  }
+  await requireApiAuth(event)
 
   const body = await readBody(event)
   const parsed = sendSchema.safeParse(body)
@@ -70,7 +54,8 @@ export default defineEventHandler(async (event) => {
     return { error: 'Validation failed', details: parsed.error.flatten() }
   }
 
-  let { to, from, subject, html, text, replyTo } = parsed.data
+  const { to, from, subject, replyTo } = parsed.data
+  let { html, text } = parsed.data
   const { type } = parsed.data
   let unsubscribeUrl: string | undefined
   const toEmail = extractEmail(to)
@@ -124,6 +109,8 @@ export default defineEventHandler(async (event) => {
         textBody: text ?? null,
         replyTo: replyTo ?? null,
         status: 'suppressed',
+        providerId: identity?.providerId ?? null,
+        providerType: identity?.providerType ?? null,
       })
       .returning()
 
@@ -132,8 +119,23 @@ export default defineEventHandler(async (event) => {
     }
 
     await db.insert(emailEvents).values([
-      { emailSendId: send.id, eventType: 'queued', rawPayload: {}, occurredAt: send.createdAt },
-      { emailSendId: send.id, eventType: 'suppressed', rawPayload: { reason: suppression.reason }, metadata: { reason: suppression.reason }, occurredAt: send.updatedAt },
+      {
+        emailSendId: send.id,
+        providerId: identity?.providerId ?? null,
+        providerType: identity?.providerType ?? null,
+        eventType: 'queued',
+        rawPayload: {},
+        occurredAt: send.createdAt,
+      },
+      {
+        emailSendId: send.id,
+        providerId: identity?.providerId ?? null,
+        providerType: identity?.providerType ?? null,
+        eventType: 'suppressed',
+        rawPayload: { reason: suppression.reason },
+        metadata: { reason: suppression.reason },
+        occurredAt: send.updatedAt,
+      },
     ])
 
     setResponseStatus(event, 202)
@@ -151,6 +153,8 @@ export default defineEventHandler(async (event) => {
       textBody: text ?? null,
       replyTo: replyTo ?? null,
       status: 'queued',
+      providerId: identity?.providerId ?? null,
+      providerType: identity?.providerType ?? null,
     })
     .returning()
 
@@ -170,6 +174,8 @@ export default defineEventHandler(async (event) => {
   await db.insert(emailEvents).values({
     emailSendId: send.id,
     eventType: 'queued',
+    providerId: identity?.providerId ?? null,
+    providerType: identity?.providerType ?? null,
     rawPayload: {},
     occurredAt: send.createdAt,
   })
@@ -184,9 +190,10 @@ export default defineEventHandler(async (event) => {
       html,
       text,
       replyTo,
-      tenantName: identity.tenantName ?? undefined,
+      tenantName: identity?.tenantName ?? undefined,
       unsubscribeUrl,
       enqueuedAt: new Date().toISOString(),
+      providerId: identity?.providerId ?? undefined,
     },
     { jobId: send.id },
   )

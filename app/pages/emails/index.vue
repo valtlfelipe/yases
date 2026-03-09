@@ -261,7 +261,9 @@ watch(toInput, (v) => {
 
 // Date range — UCalendar range returns { start, end } CalendarDate objects
 // CalendarDate.toString() → "YYYY-MM-DD"
-const dateRange = ref<any>(undefined)
+type CalendarDate = { toString(): string }
+type CalendarRange = { start?: CalendarDate, end?: CalendarDate } | undefined
+const dateRange = ref<CalendarRange>(undefined)
 watch(dateRange, (range) => {
   filters.dateFrom = range?.start?.toString()
   filters.dateTo = range?.end?.toString()
@@ -270,7 +272,7 @@ watch(dateRange, (range) => {
 
 const dateRangeLabel = computed(() => {
   if (!dateRange.value?.start) return 'Date range'
-  const fmt = (d: any) => new Date(d.toString()).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  const fmt = (d: CalendarDate) => new Date(d.toString()).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
   const start = fmt(dateRange.value.start)
   const end = dateRange.value.end ? ` – ${fmt(dateRange.value.end)}` : ''
   return start + end

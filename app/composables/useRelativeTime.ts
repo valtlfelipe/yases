@@ -26,7 +26,7 @@ export function useRelativeTime() {
     return diff < RELATIVE_THRESHOLD_HOURS * 3_600_000
   }
 
-  function formatDate(dateStr: string, withYear = true): { text: string; tooltip: string | null } {
+  function formatDate(dateStr: string, withYear = true): { text: string, tooltip: string | null } {
     if (isRecent(dateStr)) {
       return { text: relativeFormat(dateStr), tooltip: fullFormat(dateStr, withYear) }
     }

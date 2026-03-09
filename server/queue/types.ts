@@ -1,6 +1,9 @@
+import type { ProviderEvent, ProviderType } from '../lib/providers'
+
 export interface WebhookJobData {
-  notificationType: string
-  notification: Record<string, unknown>
+  provider: ProviderType
+  providerId?: string
+  event: ProviderEvent
   rawPayload: Record<string, unknown>
 }
 
@@ -15,4 +18,5 @@ export interface EmailJobData {
   tenantName?: string
   unsubscribeUrl?: string
   enqueuedAt: string
+  providerId?: string
 }

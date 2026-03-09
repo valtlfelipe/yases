@@ -6,11 +6,6 @@ const envSchema = z.object({
   DATABASE_URL: z.string().url(),
   REDIS_URL: z.string().url(),
 
-  AWS_REGION: z.string().min(1),
-  AWS_ACCESS_KEY_ID: z.string().min(1),
-  AWS_SECRET_ACCESS_KEY: z.string().min(1),
-  SES_CONFIGURATION_SET: z.string().optional(),
-
   DISPOSABLE_BLOCKLIST_URL: z
     .string()
     .url()

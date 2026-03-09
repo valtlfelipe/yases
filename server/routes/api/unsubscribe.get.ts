@@ -23,10 +23,10 @@ export default defineEventHandler(async (event) => {
   await suppressionService.add(result.email, 'unsubscribed', 'Unsubscribed via email link')
 
   if (result.emailSendId) {
-    const [send] = await db.select({ sesMessageId: emailSends.sesMessageId }).from(emailSends).where(eq(emailSends.id, result.emailSendId)).limit(1)
+    const [send] = await db.select({ providerMessageId: emailSends.providerMessageId }).from(emailSends).where(eq(emailSends.id, result.emailSendId)).limit(1)
     await db.insert(emailEvents).values({
       emailSendId: result.emailSendId,
-      sesMessageId: send?.sesMessageId ?? null,
+      providerMessageId: send?.providerMessageId ?? null,
       eventType: 'unsubscribe',
       rawPayload: {},
       occurredAt: new Date(),

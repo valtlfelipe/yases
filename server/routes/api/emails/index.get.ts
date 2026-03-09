@@ -1,34 +1,13 @@
-import { auth } from '../../../lib/auth'
 import { desc, count, and, eq, ilike, gte, lte } from 'drizzle-orm'
 import { db } from '../../../db/index'
 import { emailSends, emailStatusEnum } from '../../../db/schema'
+import { requireApiAuth } from '../../../utils/requireApiAuth'
 
 type EmailStatus = (typeof emailStatusEnum.enumValues)[number]
 const VALID_STATUSES = new Set<string>(emailStatusEnum.enumValues)
 
 export default defineEventHandler(async (event) => {
-  const headers = event.headers
-
-  let session = await auth.api.getSession({ headers }).catch(() => null)
-
-  if (!session) {
-    const apiKey = headers.get('x-api-key') || headers.get('authorization')?.replace(/^Bearer\s+/i, '')
-    if (apiKey) {
-      const result = await auth.api.verifyApiKey({ body: { key: apiKey } })
-      if (!result.valid) {
-        throw createError({ statusCode: 401, statusMessage: 'Invalid API key' })
-      }
-      // @ts-expect-error - API key authentication creates a minimal session object
-      session = { user: result.key, session: null }
-    }
-  }
-
-  if (!session) {
-    throw createError({
-      statusCode: 401,
-      statusMessage: 'Unauthorized',
-    })
-  }
+  await requireApiAuth(event)
 
   const query = getQuery(event)
   const page = Number(query.page) || 1

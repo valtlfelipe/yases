@@ -59,7 +59,7 @@ export const verification = pgTable('verification', {
   expiresAt: timestamp('expires_at').notNull(),
   createdAt: timestamp('created_at'),
   updatedAt: timestamp('updated_at'),
-}, (table) => [
+}, table => [
   index('idx_verification_identifier').on(table.identifier),
 ])
 
@@ -92,10 +92,10 @@ export const emailStatusEnum = pgEnum('email_status', [
 ])
 
 export const emailEventTypeEnum = pgEnum('email_event_type', [
-  'queued',     // email record created, waiting to be processed
+  'queued', // email record created, waiting to be processed
   'suppressed', // recipient is on suppression list, not sent
-  'submitted',  // we handed the email to SES (worker)
-  'send',       // SES confirmed it started transmitting (SNS)
+  'submitted', // we handed the email to SES (worker)
+  'send', // SES confirmed it started transmitting (SNS)
   'delivery',
   'bounce',
   'complaint',
@@ -125,29 +125,46 @@ export const emailSends = pgTable('email_sends', {
   replyTo: text('reply_to'),
   status: emailStatusEnum('status').notNull().default('queued'),
   jobId: text('job_id'),
-  sesMessageId: text('ses_message_id'),
+  providerMessageId: text('provider_message_id'),
+  providerId: uuid('provider_id').references(() => providers.id, { onDelete: 'set null' }),
+  providerType: text('provider_type'),
   attempts: integer('attempts').notNull().default(0),
   lastError: text('last_error'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
   sentAt: timestamp('sent_at'),
-}, (table) => [
+}, table => [
   index('idx_email_sends_status').on(table.status),
   index('idx_email_sends_created_at').on(table.createdAt),
   index('idx_email_sends_to').on(table.to),
   index('idx_email_sends_job_id').on(table.jobId),
-  index('idx_email_sends_ses_message_id').on(table.sesMessageId),
+  index('idx_email_sends_provider_message_id').on(table.providerMessageId),
+  index('idx_email_sends_provider_id').on(table.providerId),
+  index('idx_email_sends_provider_type').on(table.providerType),
+  index('idx_email_sends_provider_id_message_id').on(table.providerId, table.providerMessageId),
+  index('idx_email_sends_provider_type_message_id').on(table.providerType, table.providerMessageId),
 ])
+
+export const providers = pgTable('providers', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  name: text('name').notNull(),
+  displayName: text('display_name').notNull(),
+  credentialsEncrypted: jsonb('credentials_encrypted').notNull(),
+  settings: jsonb('settings').default({}),
+  isActive: boolean('is_active').default(true),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+})
 
 export const emailIdentities = pgTable('email_identities', {
   id: uuid('id').primaryKey().defaultRandom(),
   domain: text('domain').unique().notNull(),
   status: identityStatusEnum('status').notNull().default('pending'),
   dkimTokens: text('dkim_tokens').array(),
-  dkimStatus: text('dkim_status'),
   mailFromDomain: text('mail_from_domain'),
   tenantName: text('tenant_name'),
   rawAttributes: jsonb('raw_attributes'),
+  providerId: uuid('provider_id').references(() => providers.id, { onDelete: 'set null' }),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })
@@ -175,7 +192,7 @@ export const apikey = pgTable('apikey', {
   updatedAt: timestamp('updated_at').notNull(),
   permissions: text('permissions'),
   metadata: text('metadata'),
-}, (table) => [
+}, table => [
   index('idx_apikey_key').on(table.key),
 ])
 
@@ -184,12 +201,16 @@ export const emailEvents = pgTable('email_events', {
   emailSendId: uuid('email_send_id')
     .notNull()
     .references(() => emailSends.id, { onDelete: 'cascade' }),
-  sesMessageId: text('ses_message_id'),
+  providerMessageId: text('provider_message_id'),
+  providerId: uuid('provider_id').references(() => providers.id, { onDelete: 'set null' }),
+  providerType: text('provider_type'),
   eventType: emailEventTypeEnum('event_type').notNull(),
   rawPayload: jsonb('raw_payload').notNull(),
   metadata: jsonb('metadata'),
   occurredAt: timestamp('occurred_at').defaultNow().notNull(),
-}, (table) => [
+}, table => [
   index('idx_email_events_event_type').on(table.eventType),
   index('idx_email_events_occurred_at').on(table.occurredAt),
+  index('idx_email_events_provider_id_message_id').on(table.providerId, table.providerMessageId),
+  index('idx_email_events_provider_type_message_id').on(table.providerType, table.providerMessageId),
 ])

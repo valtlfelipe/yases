@@ -43,8 +43,8 @@ interface HealthData {
   available: boolean
   sendingStatus?: string
   reputationImpact?: string | null
-  awsManagedStatus?: string | null
-  customerManagedStatus?: string | null
+  providerManagedStatus?: string | null
+  accountManagedStatus?: string | null
 }
 
 const { data, pending, error } = useFetch<HealthData>(
@@ -87,10 +87,10 @@ const textColor = computed(() => {
 
 const tooltip = computed(() => {
   const parts: string[] = []
-  const aws = data.value?.awsManagedStatus
-  const customer = data.value?.customerManagedStatus
-  if (aws) parts.push(`AWS: ${aws}`)
-  if (customer) parts.push(`Customer: ${customer}`)
+  const providerManaged = data.value?.providerManagedStatus
+  const accountManaged = data.value?.accountManagedStatus
+  if (providerManaged) parts.push(`Provider: ${providerManaged}`)
+  if (accountManaged) parts.push(`Account: ${accountManaged}`)
   return parts.length ? parts.join(' · ') : 'Sending enabled, no reputation issues'
 })
 </script>
