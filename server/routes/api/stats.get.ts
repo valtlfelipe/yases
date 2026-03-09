@@ -20,18 +20,25 @@ export default defineEventHandler(async (event) => {
     db.select({ total: count() }).from(suppressionList),
 
     db.execute(sql`
+      WITH last_7_days AS (
+        SELECT generate_series(
+          DATE_TRUNC('day', NOW()) - INTERVAL '6 days',
+          DATE_TRUNC('day', NOW()),
+          '1 day'::interval
+        ) AS day
+      )
       SELECT
-        to_char(date_trunc('day', created_at), 'YYYY-MM-DD') AS date,
-        COUNT(*) AS total,
-        COUNT(*) FILTER (WHERE status IN ('sent', 'delivered', 'opened', 'complained', 'bounced')) AS sent,
-        COUNT(*) FILTER (WHERE status IN ('delivered', 'opened', 'complained')) AS delivered,
-        COUNT(*) FILTER (WHERE status = 'bounced') AS bounced,
-        COUNT(*) FILTER (WHERE status = 'opened') AS opened,
-        COUNT(*) FILTER (WHERE status = 'failed') AS failed
-      FROM email_sends
-      WHERE created_at >= NOW() - INTERVAL '7 days'
-      GROUP BY date_trunc('day', created_at)
-      ORDER BY date_trunc('day', created_at)
+        to_char(d.day, 'YYYY-MM-DD') AS date,
+        COALESCE(COUNT(e.*), 0) AS total,
+        COALESCE(COUNT(*) FILTER (WHERE e.status IN ('sent', 'delivered', 'opened', 'complained', 'bounced')), 0) AS sent,
+        COALESCE(COUNT(*) FILTER (WHERE e.status IN ('delivered', 'opened', 'complained')), 0) AS delivered,
+        COALESCE(COUNT(*) FILTER (WHERE e.status = 'bounced'), 0) AS bounced,
+        COALESCE(COUNT(*) FILTER (WHERE e.status = 'opened'), 0) AS opened,
+        COALESCE(COUNT(*) FILTER (WHERE e.status = 'failed'), 0) AS failed
+      FROM last_7_days d
+      LEFT JOIN email_sends e ON DATE_TRUNC('day', e.created_at) = d.day
+      GROUP BY d.day
+      ORDER BY d.day
     `),
   ])
 
