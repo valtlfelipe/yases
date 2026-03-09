@@ -23,10 +23,22 @@
           <StatusBadge :status="item.event" />
           <span class="text-xs text-stone-400 dark:text-stone-500">{{ formatDate(item.occurredAt) }}</span>
         </div>
-        <pre
+        <div
           v-if="item.metadata"
-          class="mt-2 text-xs bg-stone-100 dark:bg-stone-800 rounded-lg p-3 overflow-x-auto font-mono text-stone-600 dark:text-stone-400"
-        >{{ JSON.stringify(item.metadata, null, 2) }}</pre>
+          class="mt-2"
+        >
+          <pre
+            class="text-xs bg-stone-100 dark:bg-stone-800 rounded-lg p-3 overflow-x-auto font-mono text-stone-600 dark:text-stone-400"
+            :class="{ 'max-h-28 overflow-y-auto': !isExpanded(i) && metadataLineCount(item.metadata) > 5 }"
+          >{{ JSON.stringify(item.metadata, null, 2) }}</pre>
+          <button
+            v-if="metadataLineCount(item.metadata) > 5"
+            class="text-xs text-blue-500 hover:text-blue-600 mt-1"
+            @click="toggleExpand(i)"
+          >
+            {{ expanded.has(i) ? 'Show less' : 'Show more' }}
+          </button>
+        </div>
       </div>
     </div>
 
@@ -40,9 +52,30 @@
 </template>
 
 <script setup lang="ts">
-defineProps<{
+import { ref } from 'vue'
+
+const props = defineProps<{
   timeline: Array<{ event: string, occurredAt: string, metadata: Record<string, unknown> | null }>
 }>()
+
+const expanded = ref(new Set<number>())
+
+function metadataLineCount(metadata: Record<string, unknown> | null): number {
+  if (!metadata) return 0
+  return JSON.stringify(metadata, null, 2).split('\n').length
+}
+
+function isExpanded(index: number): boolean {
+  return expanded.value.has(index)
+}
+
+function toggleExpand(index: number) {
+  if (expanded.value.has(index)) {
+    expanded.value.delete(index)
+  } else {
+    expanded.value.add(index)
+  }
+}
 
 function dotColor(event: string) {
   const map: Record<string, string> = {
