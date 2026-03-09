@@ -25,7 +25,7 @@ export default defineEventHandler(async (event) => {
     statusData = await provider.getDomainStatus(domain)
   }
   catch {
-    throw createError({ statusCode: 502, statusMessage: 'Failed to reach AWS SES' })
+    throw createError({ statusCode: 502, statusMessage: 'Failed to reach provider API' })
   }
 
   const raw = (statusData.rawAttributes ?? {}) as {

@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm'
 import { db } from '../db/index'
 import { emailIdentities } from '../db/schema'
-import type { SendEmailParams } from '../lib/providers'
+import type { ProviderType, SendEmailParams } from '../lib/providers'
 import { ProviderService } from './ProviderService'
 
 export interface SendEmailOptions extends SendEmailParams {
@@ -9,24 +9,62 @@ export interface SendEmailOptions extends SendEmailParams {
   tenantName?: string
 }
 
+export class ProviderSendError extends Error {
+  readonly causeError: unknown
+  readonly providerId: string
+  readonly providerType: ProviderType
+  readonly permanent: boolean
+
+  constructor(params: {
+    message: string
+    causeError: unknown
+    providerId: string
+    providerType: ProviderType
+    permanent: boolean
+  }) {
+    super(params.message)
+    this.name = 'ProviderSendError'
+    this.causeError = params.causeError
+    this.providerId = params.providerId
+    this.providerType = params.providerType
+    this.permanent = params.permanent
+  }
+}
+
 const providerService = new ProviderService()
 
 export class EmailService {
-  async send(options: SendEmailOptions): Promise<{ providerMessageId: string }> {
-    const provider = await this.getProviderForSending(options.providerId, options.from)
+  async send(options: SendEmailOptions): Promise<{ providerMessageId: string, providerId: string, providerType: ProviderType }> {
+    const providerSelection = await this.getProviderForSending(options.providerId, options.from)
 
-    const result = await provider.send({
-      to: options.to,
-      from: options.from,
-      fromDomain: options.fromDomain,
-      subject: options.subject,
-      html: options.html,
-      text: options.text,
-      replyTo: options.replyTo,
-      unsubscribeUrl: options.unsubscribeUrl,
-    })
+    let result: Awaited<ReturnType<typeof providerSelection.instance.send>>
+    try {
+      result = await providerSelection.instance.send({
+        to: options.to,
+        from: options.from,
+        fromDomain: options.fromDomain,
+        subject: options.subject,
+        html: options.html,
+        text: options.text,
+        replyTo: options.replyTo,
+        unsubscribeUrl: options.unsubscribeUrl,
+      })
+    }
+    catch (error) {
+      throw new ProviderSendError({
+        message: (error as { message?: string })?.message ?? 'Provider send failed',
+        causeError: error,
+        providerId: providerSelection.providerId,
+        providerType: providerSelection.providerType,
+        permanent: providerSelection.instance.isPermanentError?.(error) ?? false,
+      })
+    }
 
-    return { providerMessageId: result.providerMessageId }
+    return {
+      providerMessageId: result.providerMessageId,
+      providerId: providerSelection.providerId,
+      providerType: providerSelection.providerType,
+    }
   }
 
   /**
@@ -36,11 +74,22 @@ export class EmailService {
    * 2. Look up provider from the identity (via domain)
    * 3. Fall back to default active provider
    */
-  private async getProviderForSending(providerId?: string, from?: string) {
+  private async getProviderForSending(providerId?: string, from?: string): Promise<{
+    instance: Awaited<ReturnType<ProviderService['getInstanceById']>>
+    providerId: string
+    providerType: ProviderType
+  }> {
     // 1. Explicit provider ID
     if (providerId) {
       try {
-        return await providerService.getInstanceById(providerId)
+        const provider = await providerService.getById(providerId)
+        if (provider) {
+          return {
+            instance: await providerService.getInstanceById(providerId),
+            providerId: provider.id,
+            providerType: provider.name,
+          }
+        }
       }
       catch {
         // continue to identity/default fallback
@@ -54,7 +103,14 @@ export class EmailService {
         const identity = await this.getIdentityByDomain(domain)
         if (identity?.providerId) {
           try {
-            return await providerService.getInstanceById(identity.providerId)
+            const provider = await providerService.getById(identity.providerId)
+            if (provider) {
+              return {
+                instance: await providerService.getInstanceById(identity.providerId),
+                providerId: provider.id,
+                providerType: provider.name,
+              }
+            }
           }
           catch {
             // continue to default fallback
@@ -64,7 +120,16 @@ export class EmailService {
     }
 
     // 3. Fall back to default active provider
-    return providerService.getInstanceById(null)
+    const defaultProvider = await providerService.getDefaultActiveProvider()
+    if (!defaultProvider) {
+      throw new Error('No active provider configured')
+    }
+
+    return {
+      instance: await providerService.getInstanceById(defaultProvider.id),
+      providerId: defaultProvider.id,
+      providerType: defaultProvider.name,
+    }
   }
 
   private async getIdentityByDomain(domain: string) {

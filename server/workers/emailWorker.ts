@@ -3,20 +3,12 @@ import { eq } from 'drizzle-orm'
 import { db } from '../db/index'
 import { emailSends, emailEvents } from '../db/schema'
 import { SuppressionService } from '../services/SuppressionService'
-import { EmailService } from '../services/EmailService'
+import { EmailService, ProviderSendError } from '../services/EmailService'
 import { QUEUE_NAME } from '../queue/index'
 import type { EmailJobData } from '../queue/types'
 import { env } from '../lib/env'
 import { bullMQConnection } from '../queue/connection'
 import { extractEmail } from '../utils/email'
-
-const PERMANENT_SES_ERRORS = new Set([
-  'MessageRejected',
-  'InvalidParameterValue',
-  'InvalidParameterCombination',
-  'MailFromDomainNotVerified',
-  'EmailAddressNotVerifiedException',
-])
 
 const suppressionService = new SuppressionService()
 const emailService = new EmailService()
@@ -58,7 +50,7 @@ async function processEmailJob(job: Job<EmailJobData>): Promise<void> {
   }
 
   try {
-    const { providerMessageId } = await emailService.send({
+    const { providerMessageId, providerId: resolvedProviderId, providerType } = await emailService.send({
       to,
       from,
       subject,
@@ -74,6 +66,8 @@ async function processEmailJob(job: Job<EmailJobData>): Promise<void> {
       .set({
         status: 'sent',
         providerMessageId,
+        providerId: resolvedProviderId,
+        providerType,
         sentAt: new Date(),
         updatedAt: new Date(),
       })
@@ -82,6 +76,8 @@ async function processEmailJob(job: Job<EmailJobData>): Promise<void> {
     await db.insert(emailEvents).values({
       emailSendId,
       providerMessageId,
+      providerId: resolvedProviderId,
+      providerType,
       eventType: 'submitted',
       rawPayload: { jobId: job.id, to, from, subject },
       occurredAt: new Date(),
@@ -93,13 +89,16 @@ async function processEmailJob(job: Job<EmailJobData>): Promise<void> {
     const error = err as { name?: string, message?: string }
     const errorName = error.name ?? ''
     const errorMessage = error.message ?? String(err)
+    const providerError = err instanceof ProviderSendError ? err : null
 
-    if (PERMANENT_SES_ERRORS.has(errorName)) {
+    if (providerError?.permanent) {
       await db
         .update(emailSends)
         .set({
           status: 'failed',
           lastError: `${errorName}: ${errorMessage}`,
+          providerId: providerError.providerId,
+          providerType: providerError.providerType,
           updatedAt: new Date(),
         })
         .where(eq(emailSends.id, emailSendId))
@@ -111,6 +110,8 @@ async function processEmailJob(job: Job<EmailJobData>): Promise<void> {
       .update(emailSends)
       .set({
         lastError: `${errorName}: ${errorMessage}`,
+        providerId: providerError?.providerId ?? providerId ?? null,
+        providerType: providerError?.providerType ?? null,
         updatedAt: new Date(),
       })
       .where(eq(emailSends.id, emailSendId))

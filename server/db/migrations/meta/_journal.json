@@ -141,6 +141,13 @@
       "when": 1772826423294,
       "tag": "0020_remarkable_khan",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1772899200000,
+      "tag": "0021_provider_scoped_events_and_multi_account",
+      "breakpoints": true
     }
   ]
 }

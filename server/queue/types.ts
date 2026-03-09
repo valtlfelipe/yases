@@ -2,6 +2,7 @@ import type { ProviderEvent, ProviderType } from '../lib/providers'
 
 export interface WebhookJobData {
   provider: ProviderType
+  providerId?: string
   event: ProviderEvent
   rawPayload: Record<string, unknown>
 }

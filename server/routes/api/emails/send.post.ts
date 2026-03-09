@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm'
 import { db } from '../../../db/index'
-import { emailSends, emailIdentities, emailEvents } from '../../../db/schema'
+import { emailSends, emailIdentities, emailEvents, providers } from '../../../db/schema'
 import { EmailValidationService } from '../../../services/EmailValidationService'
 import { SuppressionService } from '../../../services/SuppressionService'
 import { emailQueue } from '../../../queue/index'
@@ -27,8 +27,14 @@ const sendSchema = z
 async function getIdentity(fromAddress: string) {
   const domain = extractEmail(fromAddress).split('@')[1]!
   const rows = await db
-    .select({ status: emailIdentities.status, tenantName: emailIdentities.tenantName, providerId: emailIdentities.providerId })
+    .select({
+      status: emailIdentities.status,
+      tenantName: emailIdentities.tenantName,
+      providerId: emailIdentities.providerId,
+      providerType: providers.name,
+    })
     .from(emailIdentities)
+    .leftJoin(providers, eq(emailIdentities.providerId, providers.id))
     .where(eq(emailIdentities.domain, domain))
     .limit(1)
   return rows[0] ?? null
@@ -103,6 +109,8 @@ export default defineEventHandler(async (event) => {
         textBody: text ?? null,
         replyTo: replyTo ?? null,
         status: 'suppressed',
+        providerId: identity?.providerId ?? null,
+        providerType: identity?.providerType ?? null,
       })
       .returning()
 
@@ -111,8 +119,23 @@ export default defineEventHandler(async (event) => {
     }
 
     await db.insert(emailEvents).values([
-      { emailSendId: send.id, eventType: 'queued', rawPayload: {}, occurredAt: send.createdAt },
-      { emailSendId: send.id, eventType: 'suppressed', rawPayload: { reason: suppression.reason }, metadata: { reason: suppression.reason }, occurredAt: send.updatedAt },
+      {
+        emailSendId: send.id,
+        providerId: identity?.providerId ?? null,
+        providerType: identity?.providerType ?? null,
+        eventType: 'queued',
+        rawPayload: {},
+        occurredAt: send.createdAt,
+      },
+      {
+        emailSendId: send.id,
+        providerId: identity?.providerId ?? null,
+        providerType: identity?.providerType ?? null,
+        eventType: 'suppressed',
+        rawPayload: { reason: suppression.reason },
+        metadata: { reason: suppression.reason },
+        occurredAt: send.updatedAt,
+      },
     ])
 
     setResponseStatus(event, 202)
@@ -130,6 +153,8 @@ export default defineEventHandler(async (event) => {
       textBody: text ?? null,
       replyTo: replyTo ?? null,
       status: 'queued',
+      providerId: identity?.providerId ?? null,
+      providerType: identity?.providerType ?? null,
     })
     .returning()
 
@@ -149,6 +174,8 @@ export default defineEventHandler(async (event) => {
   await db.insert(emailEvents).values({
     emailSendId: send.id,
     eventType: 'queued',
+    providerId: identity?.providerId ?? null,
+    providerType: identity?.providerType ?? null,
     rawPayload: {},
     occurredAt: send.createdAt,
   })

@@ -4,16 +4,7 @@ import type { ProviderCredentials } from '../../../../lib/providers'
 import { requireApiAuth } from '../../../../utils/requireApiAuth'
 
 const updateProviderSchema = z.object({
-  credentials: z
-    .object({
-      accessKeyId: z.string().optional(),
-      secretAccessKey: z.string().optional(),
-      region: z.string().optional(),
-      apiKey: z.string().optional(),
-      mailgunApiKey: z.string().optional(),
-      domain: z.string().optional(),
-    })
-    .optional(),
+  credentials: z.record(z.string(), z.unknown()).optional(),
   settings: z.record(z.string(), z.unknown()).optional(),
   isActive: z.boolean().optional(),
 })

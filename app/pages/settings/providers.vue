@@ -245,64 +245,19 @@
             />
           </UFormField>
 
-          <!-- AWS Fields -->
-          <template v-if="formData.name === 'aws'">
-            <UFormField label="Access Key ID">
-              <UInput
-                v-model="formData.credentials.accessKeyId"
-                placeholder="AKIAIOSFODNN7EXAMPLE"
-                class="w-full"
-              />
-            </UFormField>
-            <UFormField label="Secret Access Key">
-              <UInput
-                v-model="formData.credentials.secretAccessKey"
-                type="password"
-                placeholder="••••••••••••••••"
-                class="w-full"
-              />
-            </UFormField>
-            <UFormField label="Region">
+          <template v-for="field in selectedCredentialFields" :key="field.key">
+            <UFormField :label="field.label">
               <USelect
-                v-model="formData.credentials.region"
-                :items="awsRegions"
+                v-if="field.type === 'select'"
+                v-model="formData.credentials[field.key]"
+                :items="field.options ?? []"
                 class="w-full"
               />
-            </UFormField>
-          </template>
-
-          <!-- SendGrid Fields -->
-          <template v-else-if="formData.name === 'sendgrid'">
-            <UFormField label="API Key">
               <UInput
-                v-model="formData.credentials.apiKey"
-                placeholder="SG.xxxxxxxx"
-                class="w-full"
-              />
-            </UFormField>
-          </template>
-
-          <!-- Mailgun Fields -->
-          <template v-else-if="formData.name === 'mailgun'">
-            <UFormField label="API Key">
-              <UInput
-                v-model="formData.credentials.mailgunApiKey"
-                type="password"
-                placeholder="••••••••••••••••"
-                class="w-full"
-              />
-            </UFormField>
-            <UFormField label="Domain">
-              <UInput
-                v-model="formData.credentials.domain"
-                placeholder="mg.example.com"
-                class="w-full"
-              />
-            </UFormField>
-            <UFormField label="Region">
-              <USelect
-                v-model="formData.credentials.mailgunRegion"
-                :items="mailgunRegions"
+                v-else
+                v-model="formData.credentials[field.key]"
+                :type="field.type === 'password' ? 'password' : 'text'"
+                :placeholder="field.placeholder ?? ''"
                 class="w-full"
               />
             </UFormField>
@@ -517,11 +472,31 @@ interface Provider {
   updatedAt: string
 }
 
+interface ProviderCredentialField {
+  key: string
+  label: string
+  type: 'text' | 'password' | 'select'
+  required?: boolean
+  placeholder?: string
+  options?: Array<{ label: string, value: string }>
+}
+
+interface ProviderTypeDefinition {
+  type: string
+  displayName: string
+  credentialFields: ProviderCredentialField[]
+}
+
 const toast = useToast()
 
 const { data, pending, error, refresh: refreshList } = useFetch<Provider[]>('/api/providers', {
   credentials: 'include',
   key: 'providers',
+})
+const { data: providerTypesData } = useFetch<ProviderTypeDefinition[]>('/api/providers/types', {
+  credentials: 'include',
+  key: 'provider-types',
+  default: () => [],
 })
 
 // --- Add/Edit Modal ---
@@ -530,68 +505,36 @@ const editingProvider = ref<Provider | null>(null)
 const savingProvider = ref(false)
 const formError = ref<string | null>(null)
 
-const providerTypes = [
-  { label: 'AWS SES', value: 'aws' },
-]
-
-const awsRegions = [
-  // US Regions
-  { label: 'US East (N. Virginia)', value: 'us-east-1' },
-  { label: 'US East (Ohio)', value: 'us-east-2' },
-  { label: 'US West (N. California)', value: 'us-west-1' },
-  { label: 'US West (Oregon)', value: 'us-west-2' },
-  // Canada
-  { label: 'Canada (Central)', value: 'ca-central-1' },
-  // Europe
-  { label: 'Europe (Frankfurt)', value: 'eu-central-1' },
-  { label: 'Europe (Ireland)', value: 'eu-west-1' },
-  { label: 'Europe (London)', value: 'eu-west-2' },
-  { label: 'Europe (Paris)', value: 'eu-west-3' },
-  { label: 'Europe (Stockholm)', value: 'eu-north-1' },
-  { label: 'Europe (Milan)', value: 'eu-south-1' },
-  { label: 'Europe (Spain)', value: 'eu-south-2' },
-  { label: 'Europe (Zurich)', value: 'eu-central-2' },
-  // Asia Pacific
-  { label: 'Asia Pacific (Tokyo)', value: 'ap-northeast-1' },
-  { label: 'Asia Pacific (Seoul)', value: 'ap-northeast-2' },
-  { label: 'Asia Pacific (Singapore)', value: 'ap-southeast-1' },
-  { label: 'Asia Pacific (Sydney)', value: 'ap-southeast-2' },
-  { label: 'Asia Pacific (Jakarta)', value: 'ap-southeast-3' },
-  { label: 'Asia Pacific (Melbourne)', value: 'ap-southeast-4' },
-  { label: 'Asia Pacific (Mumbai)', value: 'ap-south-1' },
-  { label: 'Asia Pacific (Hyderabad)', value: 'ap-south-2' },
-  { label: 'Asia Pacific (Hong Kong)', value: 'ap-east-1' },
-  { label: 'Asia Pacific (Osaka)', value: 'ap-northeast-3' },
-  // South America
-  { label: 'South America (Sao Paulo)', value: 'sa-east-1' },
-  // Middle East
-  { label: 'Middle East (Bahrain)', value: 'me-south-1' },
-  { label: 'Middle East (UAE)', value: 'me-central-1' },
-  // Africa
-  { label: 'Africa (Cape Town)', value: 'af-south-1' },
-  { label: 'Israel (Tel Aviv)', value: 'il-central-1' },
-]
-
-const mailgunRegions = [
-  { label: 'US', value: 'us' },
-  { label: 'EU', value: 'eu' },
-]
+const providerTypes = computed(() => (
+  providerTypesData.value.map(p => ({ label: p.displayName, value: p.type }))
+))
+const selectedCredentialFields = computed(() => (
+  providerTypesData.value.find(p => p.type === formData.name)?.credentialFields ?? []
+))
 
 const defaultFormData = {
   name: 'aws',
   displayName: '',
-  credentials: {
-    accessKeyId: '',
-    secretAccessKey: '',
-    region: 'us-east-1',
-    apiKey: '',
-    mailgunApiKey: '',
-    domain: '',
-    mailgunRegion: 'us',
-  },
+  credentials: {} as Record<string, string>,
 }
 
 const formData = reactive({ ...defaultFormData })
+
+watch(selectedCredentialFields, (fields) => {
+  for (const field of fields) {
+    if (!formData.credentials[field.key] && field.type === 'select' && field.options?.[0]?.value) {
+      formData.credentials[field.key] = field.options[0].value
+    }
+  }
+}, { immediate: true })
+
+watch(providerTypes, (items) => {
+  const first = items[0]
+  if (!first) return
+  if (!items.some(i => i.value === formData.name)) {
+    formData.name = first.value
+  }
+}, { immediate: true })
 
 function openAddModal() {
   editingProvider.value = null
@@ -609,15 +552,7 @@ function openEditModal(provider: Provider) {
   editingProvider.value = provider
   formData.name = provider.name
   formData.displayName = provider.displayName
-  formData.credentials = {
-    accessKeyId: '',
-    secretAccessKey: '',
-    region: 'us-east-1',
-    apiKey: '',
-    mailgunApiKey: '',
-    domain: '',
-    mailgunRegion: 'us',
-  }
+  formData.credentials = {}
   formError.value = null
   showProviderModal.value = true
 }
@@ -637,33 +572,16 @@ async function saveProvider() {
   formError.value = null
 
   const credentials: Record<string, string> = {}
-  if (formData.name === 'aws') {
-    if (!formData.credentials.accessKeyId || !formData.credentials.secretAccessKey) {
-      formError.value = 'Please enter AWS credentials.'
+  for (const field of selectedCredentialFields.value) {
+    const value = (formData.credentials[field.key] ?? '').trim()
+    if (field.required && !value) {
+      formError.value = `Please enter ${field.label}.`
       savingProvider.value = false
       return
     }
-    credentials.accessKeyId = formData.credentials.accessKeyId
-    credentials.secretAccessKey = formData.credentials.secretAccessKey
-    credentials.region = formData.credentials.region || 'us-east-1'
-  }
-  else if (formData.name === 'sendgrid') {
-    if (!formData.credentials.apiKey) {
-      formError.value = 'Please enter your SendGrid API key.'
-      savingProvider.value = false
-      return
+    if (value) {
+      credentials[field.key] = value
     }
-    credentials.apiKey = formData.credentials.apiKey
-  }
-  else if (formData.name === 'mailgun') {
-    if (!formData.credentials.mailgunApiKey) {
-      formError.value = 'Please enter your Mailgun API key.'
-      savingProvider.value = false
-      return
-    }
-    credentials.mailgunApiKey = formData.credentials.mailgunApiKey
-    credentials.domain = formData.credentials.domain || ''
-    credentials.mailgunRegion = formData.credentials.mailgunRegion || 'us'
   }
 
   try {
@@ -735,9 +653,12 @@ const setupResult = ref<{ success: boolean, details?: Record<string, unknown> } 
 const webhookEndpoint = computed(() => {
   const host = webhookUrl.value.trim() || 'https://your-domain.com'
   const providerName = setupProvider.value?.name || 'aws'
+  const providerId = setupProvider.value?.id
   // Ensure host doesn't have trailing slash
   const cleanHost = host.replace(/\/$/, '')
-  return `${cleanHost}/api/webhook/${providerName}`
+  return providerId
+    ? `${cleanHost}/api/webhook/${providerName}?providerId=${providerId}`
+    : `${cleanHost}/api/webhook/${providerName}`
 })
 
 function openSetupModal(provider: Provider) {
@@ -762,7 +683,7 @@ async function runSetup() {
 
   // Construct full URL by appending /api/webhook/{provider}
   const host = webhookUrl.value.trim().replace(/\/$/, '')
-  const fullWebhookUrl = `${host}/api/webhook/${setupProvider.value.name}`
+  const fullWebhookUrl = `${host}/api/webhook/${setupProvider.value.name}?providerId=${setupProvider.value.id}`
 
   settingUp.value = true
   try {
@@ -851,16 +772,7 @@ function getProviderBrandIcon(name: string) {
 }
 
 function getProviderLabel(name: string) {
-  switch (name) {
-    case 'aws':
-      return 'AWS SES'
-    case 'sendgrid':
-      return 'SendGrid'
-    case 'mailgun':
-      return 'Mailgun'
-    default:
-      return name
-  }
+  return providerTypesData.value.find(p => p.type === name)?.displayName ?? name
 }
 
 function formatDate(dateStr: string) {

@@ -6,14 +6,7 @@ import { requireApiAuth } from '../../../utils/requireApiAuth'
 const createProviderSchema = z.object({
   name: z.string().min(1),
   displayName: z.string().min(1),
-  credentials: z.object({
-    accessKeyId: z.string().optional(),
-    secretAccessKey: z.string().optional(),
-    region: z.string().optional(),
-    apiKey: z.string().optional(),
-    mailgunApiKey: z.string().optional(),
-    domain: z.string().optional(),
-  }),
+  credentials: z.record(z.string(), z.unknown()),
   settings: z.record(z.string(), z.unknown()).optional(),
 })
 

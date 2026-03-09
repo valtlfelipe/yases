@@ -1,37 +1,70 @@
 import type { IProvider, ProviderType, ProviderCredentials } from './types'
 import { AWSProvider } from './aws'
 
-const providers: Partial<Record<ProviderType, new () => IProvider>> = {
-  aws: AWSProvider,
-  // sendgrid: SendGridProvider,
-  // mailgun: MailgunProvider,
+export interface ProviderDefinition {
+  type: ProviderType
+  displayName: string
+  aliases?: string[]
+  create: () => IProvider
+}
+
+const providerRegistry = new Map<ProviderType, ProviderDefinition>()
+const providerAliasRegistry = new Map<string, ProviderType>()
+
+export function registerProvider(definition: ProviderDefinition): void {
+  providerRegistry.set(definition.type, definition)
+
+  providerAliasRegistry.set(definition.type, definition.type)
+  for (const alias of definition.aliases ?? []) {
+    providerAliasRegistry.set(alias, definition.type)
+  }
+}
+
+registerProvider({
+  type: 'aws',
+  displayName: 'Amazon SES',
+  aliases: ['ses'],
+  create: () => new AWSProvider(),
+})
+
+export function resolveProviderType(value: string | null | undefined): ProviderType | null {
+  if (!value) {
+    return null
+  }
+  return providerAliasRegistry.get(value) ?? null
 }
 
 export function getProvider(type: ProviderType): IProvider {
-  const ProviderClass = providers[type]
-  if (!ProviderClass) {
+  const definition = providerRegistry.get(type)
+  if (!definition) {
     throw new Error(`Unknown provider type: ${type}`)
   }
 
-  return new ProviderClass()
+  return definition.create()
 }
 
-export function getProviderWithCredentials(type: ProviderType, credentials: ProviderCredentials): IProvider {
+export async function getProviderWithCredentials(type: ProviderType, credentials: ProviderCredentials): Promise<IProvider> {
   const provider = getProvider(type)
-
-  if (type === 'aws' && 'setCredentials' in provider) {
-    (provider as AWSProvider).setCredentials(credentials)
+  if (provider.init) {
+    await provider.init({ credentials })
   }
-
   return provider
 }
 
 export function getProviderTypes(): ProviderType[] {
-  return Object.keys(providers) as ProviderType[]
+  return Array.from(providerRegistry.keys())
+}
+
+export function getProviderDefinition(type: ProviderType): ProviderDefinition {
+  const definition = providerRegistry.get(type)
+  if (!definition) {
+    throw new Error(`Unknown provider type: ${type}`)
+  }
+  return definition
 }
 
 export function getProviderDisplayName(type: ProviderType): string {
-  return getProvider(type).displayName
+  return getProviderDefinition(type).displayName
 }
 
 export type { IProvider, ProviderType, ProviderCredentials }
@@ -45,4 +78,7 @@ export type {
   DomainDnsRecords,
   DomainDnsRecord,
   DomainHealthResult,
+  ProviderConfigSchema,
+  ProviderCredentialField,
+  ProviderInitParams,
 } from './types'

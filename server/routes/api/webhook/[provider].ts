@@ -1,5 +1,5 @@
 import { webhookQueue } from '../../../queue/webhookQueue'
-import { getProvider, type ProviderType } from '../../../lib/providers'
+import { getProvider, getProviderTypes, resolveProviderType } from '../../../lib/providers'
 
 export default defineEventHandler(async (event) => {
   if (event.method !== 'POST') {
@@ -8,7 +8,10 @@ export default defineEventHandler(async (event) => {
   }
 
   const providerParam = getRouterParam(event, 'provider')
-  const providerType = (providerParam === 'ses' ? 'aws' : providerParam) as ProviderType
+  const providerType = resolveProviderType(providerParam)
+  const query = getQuery(event)
+  const providerIdRaw = typeof query.providerId === 'string' ? query.providerId : undefined
+  const providerId = providerIdRaw && /^[0-9a-f-]{36}$/i.test(providerIdRaw) ? providerIdRaw : undefined
 
   if (!providerType) {
     throw createError({
@@ -18,7 +21,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // Validate provider type
-  const validProviders: ProviderType[] = ['aws', 'sendgrid', 'mailgun']
+  const validProviders = getProviderTypes()
   if (!validProviders.includes(providerType)) {
     throw createError({
       statusCode: 400,
@@ -35,47 +38,15 @@ export default defineEventHandler(async (event) => {
     return { ok: true }
   }
 
-  // Handle AWS SNS SubscriptionConfirmation
-  if (providerType === 'aws') {
-    const messageType = body['Type'] as string | undefined
-
-    if (messageType === 'SubscriptionConfirmation') {
-      const subscribeUrl = body['SubscribeURL'] as string | undefined
-      if (!subscribeUrl) return { ok: true }
-
-      let parsed: URL
-      try {
-        parsed = new URL(subscribeUrl)
-      }
-      catch {
-        console.warn('[Webhook] SNS SubscriptionConfirmation has invalid SubscribeURL')
-        return { ok: true }
-      }
-
-      const SNS_HOST_RE = /^sns\.[a-z0-9-]+\.amazonaws\.com$/
-      if (parsed.protocol !== 'https:' || !SNS_HOST_RE.test(parsed.hostname)) {
-        console.warn(`[Webhook] SNS SubscriptionConfirmation rejected — disallowed host: ${parsed.hostname}`)
-        return { ok: true }
-      }
-
-      try {
-        const res = await fetch(subscribeUrl)
-        if (!res.ok) throw new Error(`HTTP ${res.status}`)
-        console.log('[Webhook] SNS subscription confirmed')
-      }
-      catch (err) {
-        console.error('[Webhook] Failed to confirm SNS subscription:', (err as Error).message)
-      }
-      return { ok: true }
-    }
-
-    if (messageType !== 'Notification') {
-      return { ok: true }
-    }
-  }
-
   try {
     const provider = getProvider(providerType)
+    if (provider.handleWebhookRequest) {
+      const result = await provider.handleWebhookRequest(body)
+      if (result.handled) {
+        return { ok: true }
+      }
+    }
+
     const payload = provider.parseWebhook(body)
 
     for (const eventData of payload.events) {
@@ -83,6 +54,7 @@ export default defineEventHandler(async (event) => {
 
       await webhookQueue.add(eventData.eventType, {
         provider: providerType,
+        providerId,
         event: eventData,
         rawPayload: payload.rawBody as Record<string, unknown>,
       })

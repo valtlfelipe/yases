@@ -126,6 +126,8 @@ export const emailSends = pgTable('email_sends', {
   status: emailStatusEnum('status').notNull().default('queued'),
   jobId: text('job_id'),
   providerMessageId: text('provider_message_id'),
+  providerId: uuid('provider_id').references(() => providers.id, { onDelete: 'set null' }),
+  providerType: text('provider_type'),
   attempts: integer('attempts').notNull().default(0),
   lastError: text('last_error'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -137,11 +139,15 @@ export const emailSends = pgTable('email_sends', {
   index('idx_email_sends_to').on(table.to),
   index('idx_email_sends_job_id').on(table.jobId),
   index('idx_email_sends_provider_message_id').on(table.providerMessageId),
+  index('idx_email_sends_provider_id').on(table.providerId),
+  index('idx_email_sends_provider_type').on(table.providerType),
+  index('idx_email_sends_provider_id_message_id').on(table.providerId, table.providerMessageId),
+  index('idx_email_sends_provider_type_message_id').on(table.providerType, table.providerMessageId),
 ])
 
 export const providers = pgTable('providers', {
   id: uuid('id').primaryKey().defaultRandom(),
-  name: text('name').notNull().unique(),
+  name: text('name').notNull(),
   displayName: text('display_name').notNull(),
   credentialsEncrypted: jsonb('credentials_encrypted').notNull(),
   settings: jsonb('settings').default({}),
@@ -196,6 +202,8 @@ export const emailEvents = pgTable('email_events', {
     .notNull()
     .references(() => emailSends.id, { onDelete: 'cascade' }),
   providerMessageId: text('provider_message_id'),
+  providerId: uuid('provider_id').references(() => providers.id, { onDelete: 'set null' }),
+  providerType: text('provider_type'),
   eventType: emailEventTypeEnum('event_type').notNull(),
   rawPayload: jsonb('raw_payload').notNull(),
   metadata: jsonb('metadata'),
@@ -203,4 +211,6 @@ export const emailEvents = pgTable('email_events', {
 }, table => [
   index('idx_email_events_event_type').on(table.eventType),
   index('idx_email_events_occurred_at').on(table.occurredAt),
+  index('idx_email_events_provider_id_message_id').on(table.providerId, table.providerMessageId),
+  index('idx_email_events_provider_type_message_id').on(table.providerType, table.providerMessageId),
 ])

@@ -15,6 +15,8 @@ import {
 } from '@aws-sdk/client-sesv2'
 import type {
   IProvider,
+  ProviderInitParams,
+  ProviderConfigSchema,
   ProviderCredentials,
   SendEmailParams,
   SendEmailResult,
@@ -39,6 +41,14 @@ type AwsCredentials = ProviderCredentials & {
   region: string
 }
 
+const PERMANENT_AWS_ERRORS = new Set([
+  'MessageRejected',
+  'InvalidParameterValue',
+  'InvalidParameterCombination',
+  'MailFromDomainNotVerified',
+  'EmailAddressNotVerifiedException',
+])
+
 export class AWSProvider implements IProvider {
   readonly type = 'aws' as const
   readonly displayName = 'Amazon SES'
@@ -46,6 +56,36 @@ export class AWSProvider implements IProvider {
   private credentials: ProviderCredentials | null = null
   private settings: AwsProviderSettings = {}
   private providerId: string | null = null
+
+  getConfigSchema(): ProviderConfigSchema {
+    return {
+      displayName: this.displayName,
+      credentialFields: [
+        { key: 'accessKeyId', label: 'Access Key ID', type: 'text', required: true, placeholder: 'AKIAIOSFODNN7EXAMPLE' },
+        { key: 'secretAccessKey', label: 'Secret Access Key', type: 'password', required: true, placeholder: '••••••••••••••••' },
+        {
+          key: 'region',
+          label: 'Region',
+          type: 'select',
+          required: true,
+          options: [
+            { label: 'US East (N. Virginia)', value: 'us-east-1' },
+            { label: 'US East (Ohio)', value: 'us-east-2' },
+            { label: 'US West (Oregon)', value: 'us-west-2' },
+            { label: 'Europe (Ireland)', value: 'eu-west-1' },
+            { label: 'Europe (Frankfurt)', value: 'eu-central-1' },
+            { label: 'South America (Sao Paulo)', value: 'sa-east-1' },
+          ],
+        },
+      ],
+    }
+  }
+
+  init(params: ProviderInitParams): void {
+    this.credentials = params.credentials
+    this.providerId = params.providerId ?? null
+    this.settings = (params.settings ?? {}) as AwsProviderSettings
+  }
 
   async validateCredentials(credentials: ProviderCredentials): Promise<boolean> {
     return validateAwsCredentials(credentials)
@@ -137,6 +177,11 @@ export class AWSProvider implements IProvider {
       providerMessageId: result.MessageId,
       providerStatus: 'sent',
     }
+  }
+
+  isPermanentError(error: unknown): boolean {
+    const errorName = (error as { name?: string }).name
+    return !!errorName && PERMANENT_AWS_ERRORS.has(errorName)
   }
 
   async setupDomain(params: { domain: string, mailFromSubdomain: string }): Promise<DomainSetupResult> {
@@ -367,6 +412,45 @@ export class AWSProvider implements IProvider {
     }
   }
 
+  async handleWebhookRequest(body: unknown): Promise<{ handled: boolean }> {
+    const payload = body as Record<string, unknown>
+    const messageType = payload['Type'] as string | undefined
+    if (messageType !== 'SubscriptionConfirmation') {
+      return { handled: false }
+    }
+
+    const subscribeUrl = payload['SubscribeURL'] as string | undefined
+    if (!subscribeUrl) {
+      return { handled: true }
+    }
+
+    let parsed: URL
+    try {
+      parsed = new URL(subscribeUrl)
+    }
+    catch {
+      console.warn('[Webhook] SNS SubscriptionConfirmation has invalid SubscribeURL')
+      return { handled: true }
+    }
+
+    const SNS_HOST_RE = /^sns\.[a-z0-9-]+\.amazonaws\.com$/
+    if (parsed.protocol !== 'https:' || !SNS_HOST_RE.test(parsed.hostname)) {
+      console.warn(`[Webhook] SNS SubscriptionConfirmation rejected - disallowed host: ${parsed.hostname}`)
+      return { handled: true }
+    }
+
+    try {
+      const res = await fetch(subscribeUrl)
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      console.log('[Webhook] SNS subscription confirmed')
+    }
+    catch (err) {
+      console.error('[Webhook] Failed to confirm SNS subscription:', (err as Error).message)
+    }
+
+    return { handled: true }
+  }
+
   parseWebhook(body: unknown): WebhookPayload {
     return parseAwsWebhook(body)
   }
@@ -375,18 +459,6 @@ export class AWSProvider implements IProvider {
     this.credentials = null
     this.settings = {}
     this.providerId = null
-  }
-
-  setCredentials(credentials: ProviderCredentials): void {
-    this.credentials = credentials
-  }
-
-  setSettings(settings: AwsProviderSettings): void {
-    this.settings = settings
-  }
-
-  getSettings(): AwsProviderSettings {
-    return this.settings
   }
 
   private getClient(): SESv2Client {

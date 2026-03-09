@@ -79,9 +79,31 @@ export interface ProviderEvent {
   metadata?: Record<string, unknown>
 }
 
+export interface ProviderInitParams {
+  providerId?: string
+  credentials: ProviderCredentials
+  settings?: Record<string, unknown>
+}
+
+export interface ProviderCredentialField {
+  key: string
+  label: string
+  type: 'text' | 'password' | 'select'
+  required?: boolean
+  placeholder?: string
+  options?: Array<{ label: string, value: string }>
+}
+
+export interface ProviderConfigSchema {
+  displayName: string
+  credentialFields: ProviderCredentialField[]
+}
+
 export interface IProvider {
   readonly type: ProviderType
   readonly displayName: string
+  getConfigSchema?(): ProviderConfigSchema
+  init?(params: ProviderInitParams): Promise<void> | void
 
   // Credential management
   validateCredentials(credentials: ProviderCredentials): Promise<boolean>
@@ -98,6 +120,7 @@ export interface IProvider {
 
   // Sending
   send(params: SendEmailParams): Promise<SendEmailResult>
+  isPermanentError?(error: unknown): boolean
 
   // Domain management (via emailIdentities)
   setupDomain(params: { domain: string, mailFromSubdomain: string }): Promise<DomainSetupResult>
@@ -108,6 +131,7 @@ export interface IProvider {
   getDomainStatus(domain: string): Promise<{ status: string, rawAttributes?: Record<string, unknown> }>
 
   // Webhook handling
+  handleWebhookRequest?(body: unknown): Promise<{ handled: boolean }>
   parseWebhook(body: unknown): WebhookPayload
 
   // Cleanup

@@ -3,7 +3,6 @@ import { db } from '../db/index'
 import { emailIdentities, providers } from '../db/schema'
 import { encrypt, decrypt, type EncryptedData } from '../lib/providers/crypto'
 import { getProviderWithCredentials, type IProvider, type ProviderCredentials, type ProviderType, type ProviderSetupResult, type DomainSetupResult } from '../lib/providers'
-import type { AwsProviderSettings } from '../lib/providers/aws'
 
 export interface CreateProviderInput {
   name: ProviderType
@@ -93,6 +92,7 @@ export class ProviderService {
       .select()
       .from(providers)
       .where(eq(providers.name, name))
+      .orderBy(asc(providers.createdAt))
       .limit(1)
 
     if (!row) return null
@@ -203,7 +203,7 @@ export class ProviderService {
       throw new ProviderHasDomainsError(id, domainCount)
     }
 
-    const providerInstance = this.getInstanceWithConfig(provider)
+    const providerInstance = await this.getInstanceWithConfig(provider)
     try {
       await providerInstance.teardownAccount()
     }
@@ -227,7 +227,7 @@ export class ProviderService {
       return { success: false, message: 'Provider not found' }
     }
 
-    const providerInstance = getProviderWithCredentials(provider.name, provider.credentials)
+    const providerInstance = await getProviderWithCredentials(provider.name, provider.credentials)
     return providerInstance.testConnection(provider.credentials)
   }
 
@@ -244,7 +244,7 @@ export class ProviderService {
       throw new ProviderLockedActiveError(id, 'setup')
     }
 
-    const providerInstance = getProviderWithCredentials(provider.name, provider.credentials)
+    const providerInstance = await getProviderWithCredentials(provider.name, provider.credentials)
 
     const result = await providerInstance.setupAccount({
       providerId: id,
@@ -298,7 +298,7 @@ export class ProviderService {
         throw new Error('Provider not found')
       }
 
-      return this.cacheInstance(provider)
+      return await this.cacheInstance(provider)
     }
 
     const defaultCached = this.getCachedDefaultProvider()
@@ -315,10 +315,10 @@ export class ProviderService {
     }
 
     this.cacheDefaultProvider(defaultProvider.id)
-    return this.cacheInstance(defaultProvider)
+    return await this.cacheInstance(defaultProvider)
   }
 
-  private async getDefaultActiveProvider(): Promise<ProviderWithCredentials | null> {
+  async getDefaultActiveProvider(): Promise<ProviderWithCredentials | null> {
     const [row] = await db
       .select()
       .from(providers)
@@ -340,10 +340,14 @@ export class ProviderService {
     }
   }
 
-  private getInstanceWithConfig(provider: ProviderWithCredentials): IProvider {
-    const providerInstance = getProviderWithCredentials(provider.name, provider.credentials)
-    if (provider.name === 'aws' && 'setSettings' in providerInstance) {
-      (providerInstance as unknown as { setSettings: (s: AwsProviderSettings) => void }).setSettings(provider.settings as AwsProviderSettings)
+  private async getInstanceWithConfig(provider: ProviderWithCredentials): Promise<IProvider> {
+    const providerInstance = await getProviderWithCredentials(provider.name, provider.credentials)
+    if (providerInstance.init) {
+      await providerInstance.init({
+        providerId: provider.id,
+        credentials: provider.credentials,
+        settings: provider.settings,
+      })
     }
 
     return providerInstance
@@ -369,13 +373,13 @@ export class ProviderService {
     return cached.instance
   }
 
-  private cacheInstance(provider: ProviderWithCredentials): IProvider {
+  private async cacheInstance(provider: ProviderWithCredentials): Promise<IProvider> {
     const existing = this.getCachedInstance(provider.id)
     if (existing) {
       return existing
     }
 
-    const instance = this.getInstanceWithConfig(provider)
+    const instance = await this.getInstanceWithConfig(provider)
     ProviderService.instanceCache.set(provider.id, {
       instance,
       expiresAt: Date.now() + ProviderService.INSTANCE_CACHE_TTL_MS,

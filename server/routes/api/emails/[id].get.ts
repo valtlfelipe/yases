@@ -1,6 +1,6 @@
 import { eq, asc } from 'drizzle-orm'
 import { db } from '../../../db/index'
-import { emailSends, emailEvents, emailIdentities, providers } from '../../../db/schema'
+import { emailSends, emailEvents, providers } from '../../../db/schema'
 import { requireApiAuth } from '../../../utils/requireApiAuth'
 
 export default defineEventHandler(async (event) => {
@@ -21,8 +21,7 @@ export default defineEventHandler(async (event) => {
         providerDisplayName: providers.displayName,
       })
       .from(emailSends)
-      .leftJoin(emailIdentities, eq(emailSends.fromDomain, emailIdentities.domain))
-      .leftJoin(providers, eq(emailIdentities.providerId, providers.id))
+      .leftJoin(providers, eq(emailSends.providerId, providers.id))
       .where(eq(emailSends.id, id))
       .limit(1),
     db
@@ -48,7 +47,7 @@ export default defineEventHandler(async (event) => {
 
   return {
     ...send,
-    providerName: row.providerDisplayName ?? row.providerName ?? null,
+    providerName: row.providerDisplayName ?? row.providerName ?? send.providerType ?? null,
     timeline,
   }
 })
