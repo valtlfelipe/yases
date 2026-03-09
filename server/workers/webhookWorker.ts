@@ -269,22 +269,22 @@ async function requireSendByMessageId(providerMessageId: string, providerType?: 
         ))
         .limit(1)
     : providerType
-    ? await db
-        .select()
-        .from(emailSends)
-        .where(and(
-          eq(emailSends.providerMessageId, providerMessageId),
-          or(
-            eq(emailSends.providerType, providerType),
-            isNull(emailSends.providerType),
-          ),
-        ))
-        .limit(1)
-    : await db
-        .select()
-        .from(emailSends)
-        .where(eq(emailSends.providerMessageId, providerMessageId))
-        .limit(1)
+      ? await db
+          .select()
+          .from(emailSends)
+          .where(and(
+            eq(emailSends.providerMessageId, providerMessageId),
+            or(
+              eq(emailSends.providerType, providerType),
+              isNull(emailSends.providerType),
+            ),
+          ))
+          .limit(1)
+      : await db
+          .select()
+          .from(emailSends)
+          .where(eq(emailSends.providerMessageId, providerMessageId))
+          .limit(1)
   const rows = scopedRows
 
   if (!rows[0]) {
