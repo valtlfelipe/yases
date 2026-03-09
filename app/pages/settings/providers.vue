@@ -173,22 +173,7 @@
                           />
                         </UButton>
                       </UTooltip>
-                      <UTooltip
-                        v-if="!item.isActive"
-                        text="Edit provider"
-                      >
-                        <UButton
-                          size="xs"
-                          variant="ghost"
-                          color="neutral"
-                          @click="openEditModal(item)"
-                        >
-                          <UIcon
-                            name="i-heroicons-pencil-square"
-                            class="w-4 h-4"
-                          />
-                        </UButton>
-                      </UTooltip>
+
                       <UTooltip text="Remove provider">
                         <UButton
                           size="xs"
@@ -221,10 +206,10 @@
         <div class="p-6 space-y-5">
           <div>
             <h3 class="text-lg font-semibold text-stone-900 dark:text-stone-100">
-              {{ editingProvider ? 'Edit Provider' : 'Add Provider' }}
+              Add Provider
             </h3>
             <p class="text-sm text-stone-500 dark:text-stone-400 mt-1">
-              {{ editingProvider ? 'Update provider credentials.' : 'Configure a new email service provider.' }}
+              Configure a new email service provider.
             </p>
           </div>
 
@@ -232,7 +217,6 @@
             <USelect
               v-model="formData.name"
               :items="providerTypes"
-              :disabled="!!editingProvider"
               class="w-full"
             />
           </UFormField>
@@ -287,7 +271,7 @@
               :loading="savingProvider"
               @click="saveProvider"
             >
-              {{ editingProvider ? 'Update' : 'Add Provider' }}
+              Add Provider
             </UButton>
           </div>
         </div>
@@ -502,9 +486,8 @@ const { data: providerTypesData } = useFetch<ProviderTypeDefinition[]>('/api/pro
   default: () => [],
 })
 
-// --- Add/Edit Modal ---
+// --- Add Modal ---
 const showProviderModal = ref(false)
-const editingProvider = ref<Provider | null>(null)
 const savingProvider = ref(false)
 const formError = ref<string | null>(null)
 
@@ -540,21 +523,8 @@ watch(providerTypes, (items) => {
 }, { immediate: true })
 
 function openAddModal() {
-  editingProvider.value = null
-  Object.assign(formData, defaultFormData)
-  formError.value = null
-  showProviderModal.value = true
-}
-
-function openEditModal(provider: Provider) {
-  if (provider.isActive) {
-    toast.add({ title: 'Active providers cannot be edited', color: 'warning' })
-    return
-  }
-
-  editingProvider.value = provider
-  formData.name = provider.name
-  formData.displayName = provider.displayName
+  formData.name = defaultFormData.name
+  formData.displayName = defaultFormData.displayName
   formData.credentials = {}
   formError.value = null
   showProviderModal.value = true
@@ -562,7 +532,10 @@ function openEditModal(provider: Provider) {
 
 function closeProviderModal() {
   showProviderModal.value = false
-  editingProvider.value = null
+  formData.name = defaultFormData.name
+  formData.displayName = defaultFormData.displayName
+  formData.credentials = {}
+  formError.value = null
 }
 
 async function saveProvider() {
@@ -588,27 +561,18 @@ async function saveProvider() {
   }
 
   try {
-    if (editingProvider.value) {
-      await $fetch(`/api/providers/${editingProvider.value.id}`, {
-        method: 'PATCH',
-        credentials: 'include',
-        body: { credentials },
-      })
-      toast.add({ title: 'Provider updated', color: 'success' })
-    }
-    else {
-      await $fetch('/api/providers', {
-        method: 'POST',
-        credentials: 'include',
-        body: {
-          name: formData.name,
-          displayName: formData.displayName,
-          credentials,
-        },
-      })
-      toast.add({ title: 'Provider added', color: 'success' })
-    }
+    const newProvider = await $fetch<Provider>('/api/providers', {
+      method: 'POST',
+      credentials: 'include',
+      body: {
+        name: formData.name,
+        displayName: formData.displayName,
+        credentials,
+      },
+    })
+    toast.add({ title: 'Provider added', color: 'success' })
     closeProviderModal()
+    openSetupModal(newProvider)
     await refreshList()
   }
   catch (e: unknown) {
@@ -698,6 +662,7 @@ async function runSetup() {
     setupResult.value = result as { success: boolean, details?: Record<string, unknown> }
     if (result.success) {
       toast.add({ title: 'Webhook configured successfully', color: 'success' })
+      showSetupModal.value = false
       await refreshList()
     }
   }
