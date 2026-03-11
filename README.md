@@ -1,6 +1,6 @@
-# YASES — Yet Another SES Wrapper
-
 <div align="center">
+
+<h1 align="center">YASES — Yet Another SES Wrapper</h1>
 
 A self-hosted email service built on AWS SES with a beautiful dashboard for managing identities, tracking deliveries, and handling bounces.
 
