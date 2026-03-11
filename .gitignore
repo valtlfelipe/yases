@@ -24,6 +24,7 @@ dist/
 
 # Bun (legacy binary lockfile)
 bun.lockb
+package-lock.json
 
 # OS
 .DS_Store
