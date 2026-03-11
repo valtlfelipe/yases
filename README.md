@@ -6,6 +6,14 @@ A self-hosted email service built on AWS SES with a beautiful dashboard for mana
 
 <img width="1210" height="784" alt="Image" src="https://github.com/user-attachments/assets/34a6973f-0d60-44b8-9eed-fa4af46b257d" />
 
+<p align="center">
+    <a href="https://github.com/valtlfelipe/yases/releases"><img src="https://img.shields.io/github/release/valtlfelipe/yases.svg" alt="GitHub Release" /></a>
+    <a href="https://github.com/valtlfelipe/yases/blob/main/LICENSE"><img src="https://img.shields.io/github/license/valtlfelipe/yases.svg" alt="MIT License" /></a>
+    <a href="https://github.com/valtlfelipe/yases/pkgs/container/yases"><img src="https://img.shields.io/badge/docker-available-blue?logo=docker" alt="Docker"/></a>
+    <a href="https://github.com/sponsors/valtlfelipe"><img src="https://img.shields.io/badge/sponsor-❤-ff69b4" alt="Sponsor"/></a>
+</p>
+
+
 </div>
 
 ## Features
