@@ -11,6 +11,7 @@ export default defineMcpTool({
     id: z.string(),
     status: z.string(),
     reason: z.string().optional(),
+    scheduledAt: z.string().optional(),
   },
   annotations: {
     readOnlyHint: false,
@@ -18,7 +19,7 @@ export default defineMcpTool({
     idempotentHint: false,
     openWorldHint: false,
   },
-  handler: async ({ to, from, subject, html, text, replyTo, type }) => {
+  handler: async ({ to, from, subject, html, text, replyTo, type, scheduledAt }) => {
     const event = useEvent()
     const userId = event.context.user?.id
 
@@ -27,7 +28,7 @@ export default defineMcpTool({
     }
 
     try {
-      const result = await sendEmail({ to, from, subject, html, text, replyTo, type })
+      const result = await sendEmail({ to, from, subject, html, text, replyTo, type, scheduledAt })
 
       return {
         content: [{

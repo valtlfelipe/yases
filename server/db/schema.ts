@@ -81,6 +81,7 @@ export const suppressionReasonEnum = pgEnum('suppression_reason', [
 
 export const emailStatusEnum = pgEnum('email_status', [
   'queued',
+  'scheduled',
   'sending',
   'sent',
   'failed',
@@ -130,6 +131,7 @@ export const emailSends = pgTable('email_sends', {
   providerType: text('provider_type'),
   attempts: integer('attempts').notNull().default(0),
   lastError: text('last_error'),
+  scheduledAt: timestamp('scheduled_at'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
   sentAt: timestamp('sent_at'),

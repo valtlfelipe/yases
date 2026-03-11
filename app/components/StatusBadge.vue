@@ -14,6 +14,7 @@ const props = defineProps<{ status: string }>()
 const statusMap: Record<string, { bg: string, text: string }> = {
   // email send statuses
   queued: { bg: 'bg-amber-500', text: 'text-amber-700 dark:text-amber-400' },
+  scheduled: { bg: 'bg-sky-500', text: 'text-sky-700 dark:text-sky-400' },
   sending: { bg: 'bg-blue-500', text: 'text-blue-700 dark:text-blue-400' },
   sent: { bg: 'bg-emerald-500', text: 'text-emerald-700 dark:text-emerald-400' },
   failed: { bg: 'bg-red-500', text: 'text-red-700 dark:text-red-400' },

@@ -237,6 +237,7 @@ watch(selectedStatus, (v) => {
 
 const statusSelectItems = [
   { label: 'All statuses', value: '_all' },
+  { label: 'Scheduled', value: 'scheduled' },
   { label: 'Queued', value: 'queued' },
   { label: 'Sending', value: 'sending' },
   { label: 'Sent', value: 'sent' },

@@ -103,6 +103,17 @@
               </dd>
             </div>
             <div
+              v-if="email.scheduledAt"
+              class="flex justify-between items-center py-2 border-b border-stone-100 dark:border-stone-800"
+            >
+              <dt class="text-sm text-stone-500 dark:text-stone-400 shrink-0 mr-4">
+                Scheduled for
+              </dt>
+              <dd class="text-sm text-stone-600 dark:text-stone-300">
+                {{ formatDate(email.scheduledAt) }}
+              </dd>
+            </div>
+            <div
               v-if="email.sentAt"
               class="flex justify-between items-center py-2 border-b border-stone-100 dark:border-stone-800"
             >

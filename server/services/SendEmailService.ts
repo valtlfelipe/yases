@@ -20,8 +20,13 @@ export const sendEmailSchema = z
     text: z.string().optional().describe('Plain text email body'),
     replyTo: emailField.optional().describe('Reply-to address'),
     type: z.enum(['transactional', 'marketing']).default('transactional').describe('Email type: "transactional" or "marketing"'),
+    scheduledAt: z.string().datetime().optional().describe('ISO 8601 datetime to schedule the email for future delivery (e.g., "2024-12-31T10:00:00Z")'),
   })
   .refine(d => d.html || d.text, { message: 'html or text is required' })
+  .refine(d => !d.scheduledAt || new Date(d.scheduledAt) > new Date(), {
+    message: 'scheduledAt must be a future date',
+    path: ['scheduledAt'],
+  })
 
 export type SendEmailInput = z.infer<typeof sendEmailSchema>
 
@@ -33,12 +38,14 @@ export interface SendEmailParams {
   text?: string
   replyTo?: string
   type?: 'transactional' | 'marketing'
+  scheduledAt?: string
 }
 
 export interface SendEmailResult {
   id: string
-  status: 'queued' | 'suppressed'
+  status: 'queued' | 'suppressed' | 'scheduled'
   reason?: string
+  scheduledAt?: string
 }
 
 export class SendEmailError extends Error {
@@ -72,7 +79,7 @@ const validationService = new EmailValidationService()
 const suppressionService = new SuppressionService()
 
 export async function sendEmail(params: SendEmailParams): Promise<SendEmailResult> {
-  const { to, from, subject, html, text, replyTo, type = 'transactional' } = params
+  const { to, from, subject, html, text, replyTo, type = 'transactional', scheduledAt } = params
 
   const toEmail = extractEmail(to)
   const fromEmail = extractEmail(from)
@@ -107,6 +114,20 @@ export async function sendEmail(params: SendEmailParams): Promise<SendEmailResul
   const suppression = await suppressionService.isSuppressed(toEmail)
   const isBlocked = suppression && (type === 'marketing' || suppression.reason !== 'unsubscribed')
 
+  const scheduledDate = scheduledAt ? new Date(scheduledAt) : undefined
+  const isScheduled = !!scheduledDate && scheduledDate > new Date()
+
+  let initialStatus: 'suppressed' | 'scheduled' | 'queued'
+  if (isBlocked) {
+    initialStatus = 'suppressed'
+  }
+  else if (isScheduled) {
+    initialStatus = 'scheduled'
+  }
+  else {
+    initialStatus = 'queued'
+  }
+
   const [send] = await db
     .insert(emailSends)
     .values({
@@ -117,9 +138,10 @@ export async function sendEmail(params: SendEmailParams): Promise<SendEmailResul
       htmlBody: html ?? null,
       textBody: text ?? null,
       replyTo: replyTo ?? null,
-      status: isBlocked ? 'suppressed' : 'queued',
+      status: initialStatus,
       providerId: identity?.providerId ?? null,
       providerType: identity?.providerType ?? null,
+      scheduledAt: scheduledDate ?? null,
     })
     .returning()
 
@@ -165,6 +187,8 @@ export async function sendEmail(params: SendEmailParams): Promise<SendEmailResul
       .where(eq(emailSends.id, send.id))
   }
 
+  const jobDelay = scheduledDate ? scheduledDate.getTime() - Date.now() : undefined
+
   const job = await emailQueue.add(
     'send',
     {
@@ -180,7 +204,7 @@ export async function sendEmail(params: SendEmailParams): Promise<SendEmailResul
       enqueuedAt: new Date().toISOString(),
       providerId: identity?.providerId ?? undefined,
     },
-    { jobId: send.id },
+    { jobId: send.id, delay: jobDelay },
   )
 
   await db
@@ -188,5 +212,9 @@ export async function sendEmail(params: SendEmailParams): Promise<SendEmailResul
     .set({ jobId: job.id ?? null })
     .where(eq(emailSends.id, send.id))
 
-  return { id: send.id, status: 'queued' }
+  return {
+    id: send.id,
+    status: isScheduled ? 'scheduled' : 'queued',
+    scheduledAt: scheduledDate?.toISOString(),
+  }
 }

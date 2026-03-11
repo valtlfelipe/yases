@@ -15,6 +15,7 @@ interface EmailSend {
   createdAt: string
   updatedAt: string
   sentAt: string | null
+  scheduledAt?: string | null
   deliveredAt?: string
   timeline?: Array<{
     event: string
