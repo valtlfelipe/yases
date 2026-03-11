@@ -24,6 +24,7 @@
     "@nuxt/eslint": "^1.15.2",
     "@nuxt/icon": "2",
     "@nuxt/ui": "^4",
+    "@nuxtjs/mcp-toolkit": "^0.7.0",
     "better-auth": "^1.5.2",
     "bullmq": "^5.70.1",
     "drizzle-orm": "^0.45.1",

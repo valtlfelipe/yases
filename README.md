@@ -294,6 +294,49 @@ When the recipient is suppressed, the email is recorded but not sent:
 
 ---
 
+## MCP Server
+
+You can also send emails via the Model Context Protocol (MCP), allowing AI agents to send emails on your behalf.
+
+### Configuration
+
+Add the MCP server to your AI client (Claude Desktop, Cursor, etc.):
+
+```json
+{
+  "mcpServers": {
+    "yases-email": {
+      "url": "https://your-domain.com/api/mcp",
+      "headers": {
+        "Authorization": "Bearer YOUR_API_KEY"
+      }
+    }
+  }
+}
+```
+
+Replace `YOUR_API_KEY` with an API key from **Settings → API Keys**.
+
+### Available Tools
+
+#### `send_email`
+
+Send an email to a recipient.
+
+**Parameters:**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `to` | string | Yes | Recipient email address |
+| `from` | string | Yes | Sender email address (must be a verified identity) |
+| `subject` | string | Yes | Email subject line |
+| `html` | string | Yes* | HTML email body (*required if `text` is not provided) |
+| `text` | string | Yes* | Plain text email body (*required if `html` is not provided) |
+| `replyTo` | string | No | Reply-to address |
+| `type` | string | No | `"transactional"` (default) or `"marketing"` |
+
+---
+
 ## Helper Scripts
 
 ### `bun run create:admin`
