@@ -10,16 +10,22 @@ A self-hosted email service built on AWS SES with a beautiful dashboard for mana
 
 ## Features
 
-- **Send Emails** — Programmatic email sending via REST API
+- **Send Emails** — Programmatic email sending via REST API or MCP
 - **Domain Management** — Add and verify sending domains with automatic DKIM setup
 - **Suppression List** — Automatic bounce and complaint handling
 - **Real-time Analytics** — Track delivery, bounce, open, and click rates
 - **Email Timeline** — View detailed status and events for each sent email
-- **Multi-user Support** — Authentication with Better Auth
 
 ## Self-Hosted Deployment Guide
 
 [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/deployyases-yet-another-ses-wrapper?referralCode=ca9X8b&utm_medium=integration&utm_source=template&utm_campaign=generic)
+
+### Prerequisites
+
+- A server with a public HTTPS URL (required for AWS SNS webhooks)
+- PostgreSQL database
+- Redis/Valkey
+- AWS account with production SES enabled
 
 ### Docker
 
@@ -34,12 +40,17 @@ docker run -d \
   -e BETTER_AUTH_SECRET=xxx \
   -e BETTER_AUTH_URL=https://your-domain.com \
   -e TOKEN_SECRET=xxx \
+  -e CREDENTIALS_ENCRYPTION_KEY=xxx \
   ghcr.io/valtlfelipe/yases:latest
 
 # Run the worker (separate container)
 docker run -d \
   -e DATABASE_URL=postgres://user:pass@host:5432/db \
   -e REDIS_URL=redis://host:6379 \
+  -e BETTER_AUTH_SECRET=xxx \
+  -e BETTER_AUTH_URL=https://your-domain.com \
+  -e TOKEN_SECRET=xxx \
+  -e CREDENTIALS_ENCRYPTION_KEY=xxx \
   ghcr.io/valtlfelipe/yases:latest bun server/workers/index.ts
 ```
 
@@ -118,66 +129,9 @@ This is needed to setup SES sending and webhooks, as managing domains and sendin
 }
 ```
 
-### Prerequisites
-
-- A server with a public HTTPS URL (required for AWS SNS webhooks)
-- PostgreSQL database
-- Redis
-- AWS account with SES configured
-
-### 1. Configure Environment
-
-Create the environment file:
-
-```bash
-cp .env.example .env
-```
-
-Required environment variables in `.env`:
-
-```env
-# Database (will be overridden by docker-compose)
-DATABASE_URL=postgres://email:email@postgres:5432/email_service
-
-# Redis (will be overridden by docker-compose)
-REDIS_URL=redis://valkey:6379
-
-# Auth
-BETTER_AUTH_SECRET=your-32-character-secret-key-here
-BETTER_AUTH_URL=https://your-domain.com
-
-# Token signing (unsubscribe links, etc.)
-TOKEN_SECRET=your-32-character-token-secret-here
-
-# Credentials encryption key for stored provider credentials
-CREDENTIALS_ENCRYPTION_KEY=your-32-character-key-here
-```
-
-AWS credentials are configured per provider in the dashboard, not in environment variables.
-
-### 2. Start the Services
-
-Start PostgreSQL, Redis, and the application using Docker Compose:
-
-```bash
-docker compose -f docker-compose.prod.yml up -d
-```
-
-This will start:
-- PostgreSQL (database)
-- Valkey (Redis replacement)
-- App server
-- Background worker
-
 ### 3. Create Your Admin Account
 
 Open your browser and navigate to `/signup` to create the first user. This user will have admin privileges and can access all features.
-
-Alternatively, use the CLI:
-
-```bash
-bun run create:admin admin@yourdomain.com mypassword123 "Admin User"
-```
 
 ### 4. Configure AWS SES
 
@@ -336,21 +290,6 @@ Send an email to a recipient.
 | `type` | string | No | `"transactional"` (default) or `"marketing"` |
 
 ---
-
-## Helper Scripts
-
-### `bun run create:admin`
-
-Creates an admin user via CLI (alternative to using `/signup`).
-
-```bash
-bun run create:admin <email> <password> [name]
-```
-
-Example:
-```bash
-bun run create:admin admin@example.com mypassword123 "Admin User"
-```
 
 ## License
 
